@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<robot name="rail_arm">
+  <!-- Superset: 6R arm + the external prismatic rail axis (coordinated IK group). -->
+  <group name="rail_arm"><chain base_link="rail_base" tip_link="arm_tool0"/></group>
+  <!-- Subset: arm only, rail excluded. The reach delta between the two groups is
+       what test_rail_fixture.py asserts (external axis extends reach). -->
+  <group name="arm"><chain base_link="arm_base" tip_link="arm_tool0"/></group>
+  <kinematics_plugin_config filename="rail_arm_plugins.yaml"/>
+</robot>

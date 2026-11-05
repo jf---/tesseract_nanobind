@@ -158,6 +158,9 @@ add_tesseract_nanobind_extension(
 )
 
 # Add tesseract_state_solver module
+target_sources(_tesseract_collision PRIVATE src/tesseract_collision/batch_state_checks.cpp)
+target_link_libraries(_tesseract_collision PRIVATE tesseract::state_solver_ofkt tesseract::environment)
+
 add_tesseract_nanobind_extension(
   tesseract_state_solver
   src/tesseract_state_solver/tesseract_state_solver_bindings.cpp
@@ -276,6 +279,7 @@ add_tesseract_nanobind_extension(
   tesseract::command_language
   tesseract::collision
   tesseract::common
+  descartes::descartes_light_bgl
 )
 
 # Add tesseract_motion_planners_trajopt module

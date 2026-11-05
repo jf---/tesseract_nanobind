@@ -827,7 +827,8 @@ class CartLineConstraint(ConstraintSet):
     def calcValues(self, joint_vals: Annotated[NDArray[numpy.float64], dict(shape=(None,), writable=False)] | Sequence[float]) -> Annotated[NDArray[numpy.float64], dict(shape=(None,), order='C')]:
         """Calculate error values for given joint values"""
 
-    def getLinePoint(self, source_tf: tesseract_robotics.tesseract_common._tesseract_common.Isometry3d, target_tf1: tesseract_robotics.tesseract_common._tesseract_common.Isometry3d, target_tf2: tesseract_robotics.tesseract_common._tesseract_common.Isometry3d) -> tesseract_robotics.tesseract_common._tesseract_common.Isometry3d:
+    @staticmethod
+    def getLinePoint(source_tf: tesseract_robotics.tesseract_common._tesseract_common.Isometry3d, target_tf1: tesseract_robotics.tesseract_common._tesseract_common.Isometry3d, target_tf2: tesseract_robotics.tesseract_common._tesseract_common.Isometry3d) -> tesseract_robotics.tesseract_common._tesseract_common.Isometry3d:
         """Find nearest point on line (uses SLERP for orientation)"""
 
     @property

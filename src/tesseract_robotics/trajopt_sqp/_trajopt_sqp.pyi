@@ -60,6 +60,9 @@ class SQPStatus(enum.Enum):
     CALLBACK_STOPPED = 6
     """Stopped by callback"""
 
+    INVALID_PREDICTED_IMPROVEMENT = 7
+    """QP predicted a material worsening at the minimum trust region."""
+
 def toString(status: SQPStatus) -> str:
     """trajopt's text for a solver status (e.g. 'SQP_CONVERGED')"""
 
@@ -119,11 +122,11 @@ class SQPParameters:
     def min_approx_improve_frac(self, arg: float, /) -> None: ...
 
     @property
-    def max_iterations(self) -> int:
-        """Max number of QP calls allowed (default: 50)"""
+    def max_iter(self) -> int:
+        """Max convexifications per penalty iteration (default: 50)."""
 
-    @max_iterations.setter
-    def max_iterations(self, arg: int, /) -> None: ...
+    @max_iter.setter
+    def max_iter(self, arg: int, /) -> None: ...
 
     @property
     def trust_shrink_ratio(self) -> float:
@@ -187,6 +190,13 @@ class SQPParameters:
 
     @inflate_constraints_individually.setter
     def inflate_constraints_individually(self, arg: bool, /) -> None: ...
+
+    @property
+    def sum_constraint_set_violations(self) -> bool:
+        """Use summed rather than largest row violation per set at solver initialization."""
+
+    @sum_constraint_set_violations.setter
+    def sum_constraint_set_violations(self, arg: bool, /) -> None: ...
 
     @property
     def initial_trust_box_size(self) -> float:
@@ -601,6 +611,9 @@ class QPProblem:
     def setConstraintMeritCoeff(self, merit_coeff: Annotated[NDArray[numpy.float64], dict(shape=(None,), writable=False)] | Sequence[float]) -> None:
         """Set constraint merit coefficients"""
 
+    def setSumConstraintSetViolations(self, sum: bool) -> None:
+        """Select summed or largest row violation per constraint set."""
+
     def getBoxSize(self) -> Annotated[NDArray[numpy.float64], dict(shape=(None,), order='C')]:
         """Get trust region box size"""
 
@@ -691,6 +704,246 @@ class SQPCallback:
         """
         Called during SQP. Return false to stop optimization. problem is valid only during the call: a problem passed to solve() from Python arrives as that object; one a planner built in C++ arrives as a QPProblemView, which raises QPProblemExpiredError once the call has returned. sqp_results is a copy the callback may keep.
         """
+
+class PIQPKKTSolver(enum.Enum):
+    """PIQP's KKT system solver"""
+
+    dense_cholesky = 0
+
+    sparse_ldlt = 1
+
+    sparse_ldlt_eq_cond = 2
+
+    sparse_ldlt_ineq_cond = 3
+
+    sparse_ldlt_cond = 4
+
+    sparse_multistage = 5
+
+class PIQPSettings:
+    """PIQP solver settings (piqp::Settings<double>)"""
+
+    def __init__(self) -> None:
+        """PIQP's own defaults"""
+
+    @property
+    def rho_init(self) -> float:
+        """Initial primal proximal penalty"""
+
+    @rho_init.setter
+    def rho_init(self, arg: float, /) -> None: ...
+
+    @property
+    def delta_init(self) -> float:
+        """Initial augmented Lagrangian penalty"""
+
+    @delta_init.setter
+    def delta_init(self, arg: float, /) -> None: ...
+
+    @property
+    def eps_abs(self) -> float:
+        """Absolute tolerance"""
+
+    @eps_abs.setter
+    def eps_abs(self, arg: float, /) -> None: ...
+
+    @property
+    def eps_rel(self) -> float:
+        """Relative tolerance"""
+
+    @eps_rel.setter
+    def eps_rel(self, arg: float, /) -> None: ...
+
+    @property
+    def check_duality_gap(self) -> bool:
+        """Also stop on the duality gap"""
+
+    @check_duality_gap.setter
+    def check_duality_gap(self, arg: bool, /) -> None: ...
+
+    @property
+    def eps_duality_gap_abs(self) -> float:
+        """Absolute duality gap tolerance"""
+
+    @eps_duality_gap_abs.setter
+    def eps_duality_gap_abs(self, arg: float, /) -> None: ...
+
+    @property
+    def eps_duality_gap_rel(self) -> float:
+        """Relative duality gap tolerance"""
+
+    @eps_duality_gap_rel.setter
+    def eps_duality_gap_rel(self, arg: float, /) -> None: ...
+
+    @property
+    def infeasibility_threshold(self) -> float:
+        """Threshold for the infeasibility detection"""
+
+    @infeasibility_threshold.setter
+    def infeasibility_threshold(self, arg: float, /) -> None: ...
+
+    @property
+    def reg_lower_limit(self) -> float:
+        """Lower limit of the regularization"""
+
+    @reg_lower_limit.setter
+    def reg_lower_limit(self, arg: float, /) -> None: ...
+
+    @property
+    def reg_finetune_lower_limit(self) -> float:
+        """Fine-tune lower limit of the regularization"""
+
+    @reg_finetune_lower_limit.setter
+    def reg_finetune_lower_limit(self, arg: float, /) -> None: ...
+
+    @property
+    def reg_finetune_primal_update_threshold(self) -> int:
+        """Primal updates before fine-tuning the regularization"""
+
+    @reg_finetune_primal_update_threshold.setter
+    def reg_finetune_primal_update_threshold(self, arg: int, /) -> None: ...
+
+    @property
+    def reg_finetune_dual_update_threshold(self) -> int:
+        """Dual updates before fine-tuning the regularization"""
+
+    @reg_finetune_dual_update_threshold.setter
+    def reg_finetune_dual_update_threshold(self, arg: int, /) -> None: ...
+
+    @property
+    def max_iter(self) -> int:
+        """Maximum number of iterations"""
+
+    @max_iter.setter
+    def max_iter(self, arg: int, /) -> None: ...
+
+    @property
+    def max_factor_retires(self) -> int:
+        """Maximum number of factorization retries"""
+
+    @max_factor_retires.setter
+    def max_factor_retires(self, arg: int, /) -> None: ...
+
+    @property
+    def preconditioner_scale_cost(self) -> bool:
+        """Scale the cost in the preconditioner"""
+
+    @preconditioner_scale_cost.setter
+    def preconditioner_scale_cost(self, arg: bool, /) -> None: ...
+
+    @property
+    def preconditioner_reuse_on_update(self) -> bool:
+        """Reuse the preconditioner when the problem is updated"""
+
+    @preconditioner_reuse_on_update.setter
+    def preconditioner_reuse_on_update(self, arg: bool, /) -> None: ...
+
+    @property
+    def preconditioner_iter(self) -> int:
+        """Preconditioner iterations"""
+
+    @preconditioner_iter.setter
+    def preconditioner_iter(self, arg: int, /) -> None: ...
+
+    @property
+    def tau(self) -> float:
+        """Maximum step size fraction to the boundary"""
+
+    @tau.setter
+    def tau(self, arg: float, /) -> None: ...
+
+    @property
+    def kkt_solver(self) -> PIQPKKTSolver:
+        """KKT system solver"""
+
+    @kkt_solver.setter
+    def kkt_solver(self, arg: PIQPKKTSolver, /) -> None: ...
+
+    @property
+    def iterative_refinement_always_enabled(self) -> bool:
+        """Always run iterative refinement"""
+
+    @iterative_refinement_always_enabled.setter
+    def iterative_refinement_always_enabled(self, arg: bool, /) -> None: ...
+
+    @property
+    def iterative_refinement_eps_abs(self) -> float:
+        """Iterative refinement absolute tolerance"""
+
+    @iterative_refinement_eps_abs.setter
+    def iterative_refinement_eps_abs(self, arg: float, /) -> None: ...
+
+    @property
+    def iterative_refinement_eps_rel(self) -> float:
+        """Iterative refinement relative tolerance"""
+
+    @iterative_refinement_eps_rel.setter
+    def iterative_refinement_eps_rel(self, arg: float, /) -> None: ...
+
+    @property
+    def iterative_refinement_max_iter(self) -> int:
+        """Iterative refinement maximum iterations"""
+
+    @iterative_refinement_max_iter.setter
+    def iterative_refinement_max_iter(self, arg: int, /) -> None: ...
+
+    @property
+    def iterative_refinement_min_improvement_rate(self) -> float:
+        """Iterative refinement minimum improvement rate"""
+
+    @iterative_refinement_min_improvement_rate.setter
+    def iterative_refinement_min_improvement_rate(self, arg: float, /) -> None: ...
+
+    @property
+    def iterative_refinement_static_regularization_eps(self) -> float:
+        """Iterative refinement static regularization"""
+
+    @iterative_refinement_static_regularization_eps.setter
+    def iterative_refinement_static_regularization_eps(self, arg: float, /) -> None: ...
+
+    @property
+    def iterative_refinement_static_regularization_rel(self) -> float:
+        """Iterative refinement relative static regularization"""
+
+    @iterative_refinement_static_regularization_rel.setter
+    def iterative_refinement_static_regularization_rel(self, arg: float, /) -> None: ...
+
+    @property
+    def verbose(self) -> bool:
+        """Print solver progress"""
+
+    @verbose.setter
+    def verbose(self, arg: bool, /) -> None: ...
+
+    @property
+    def compute_timings(self) -> bool:
+        """Measure the solver timings"""
+
+    @compute_timings.setter
+    def compute_timings(self, arg: bool, /) -> None: ...
+
+class PIQPSolver(QPSolver):
+    """PIQP-based (interior point) QP solver"""
+
+    def __init__(self) -> None:
+        """With trajopt's default PIQP settings"""
+
+    @property
+    def settings(self) -> PIQPSettings:
+        """PIQP settings, applied when the solver is next set up"""
+
+    @settings.setter
+    def settings(self, arg: PIQPSettings, /) -> None: ...
+
+    @staticmethod
+    def defaultSettings() -> PIQPSettings:
+        """The PIQP settings trajopt uses by default"""
+
+    def reusedSetup(self) -> bool:
+        """
+        Whether the last solve reused the previous setup (only the vectors changed)
+        """
+
 
 class TrustRegionSQPSolver:
     """

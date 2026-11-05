@@ -4,6 +4,7 @@
  */
 
 #include "tesseract_nb.h"
+#include "name_compat.h"
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/unique_ptr.h>
@@ -1069,6 +1070,11 @@ NB_MODULE(_tesseract_environment, m) {
         .def("getJointIds", &te::Environment::getJointIds)
         .def("getActiveJointIds", &te::Environment::getActiveJointIds)
         .def("getLinkIds", &te::Environment::getLinkIds)
+        .def("getJointNames", [](const te::Environment& self) { return tesseract_nb::names(self.getJointIds()); })
+        .def("getActiveJointNames", [](const te::Environment& self) { return tesseract_nb::names(self.getActiveJointIds()); })
+        .def("getLinkNames", [](const te::Environment& self) { return tesseract_nb::names(self.getLinkIds()); })
+        .def("getActiveLinkNames", [](const te::Environment& self) { return tesseract_nb::names(self.getActiveLinkIds()); })
+        .def("getStaticLinkNames", [](const te::Environment& self) { return tesseract_nb::names(self.getStaticLinkIds()); })
         .def("getActiveLinkIds", [](const te::Environment& self) {
             return self.getActiveLinkIds();
         })

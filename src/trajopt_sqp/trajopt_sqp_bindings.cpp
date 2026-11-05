@@ -15,6 +15,10 @@
 #include <trajopt_sqp/types.h>
 #include <trajopt_sqp/qp_solver.h>
 #include <trajopt_sqp/osqp_eigen_solver.h>
+#ifndef TRAJOPT_SQP_HAS_PIQP
+#error "The modern SQP binding requires a PIQP-enabled TrajOpt build"
+#endif
+#include <trajopt_sqp/piqp_solver.h>
 #include <trajopt_sqp/qp_problem.h>
 #include <trajopt_sqp/trajopt_qp_problem.h>
 #include <trajopt_sqp/trust_region_sqp_solver.h>
@@ -64,14 +68,17 @@ struct QPSizeError : std::invalid_argument {
     using std::invalid_argument::invalid_argument;
 };
 
-// (num_vars, num_cnts) from the last init(). OSQPEigenSolver keeps them private; its OSQP data
-// holds the same two numbers. It is the only QPSolver: QPSolver has no Python trampoline.
+// (num_vars, num_cnts) from the last init(), without bypassing either solver's checks.
 std::pair<Eigen::Index, Eigen::Index> qp_solver_size(const tsqp::QPSolver& self) {
     const auto* osqp = dynamic_cast<const tsqp::OSQPEigenSolver*>(&self);
-    if (osqp == nullptr)
-        throw std::logic_error("QPSolver: the binding sizes only OSQPEigenSolver");
-    const auto* data = osqp->solver_->data()->getData();
-    return { static_cast<Eigen::Index>(data->n), static_cast<Eigen::Index>(data->m) };
+    if (osqp != nullptr) {
+        const auto* data = osqp->solver_->data()->getData();
+        return { static_cast<Eigen::Index>(data->n), static_cast<Eigen::Index>(data->m) };
+    }
+    const auto* piqp = dynamic_cast<const tsqp::PIQPSolver*>(&self);
+    if (piqp != nullptr)
+        return {piqp->getNumVars(), piqp->getNumConstraints()};
+    throw std::logic_error("QPSolver: unsupported solver for dimension checks");
 }
 
 void require_size(const char* method, const char* what, Eigen::Index size, const char* expected_name,
@@ -147,6 +154,7 @@ public:
     void setConstraintMeritCoeff(const Eigen::Ref<const Eigen::VectorXd>& merit_coeff) override {
         live().setConstraintMeritCoeff(merit_coeff);
     }
+    void setSumConstraintSetViolations(bool sum) override { live().setSumConstraintSetViolations(sum); }
     void print() const override { live().print(); }
     Eigen::Index getNumNLPVars() const override { return live().getNumNLPVars(); }
     Eigen::Index getNumNLPConstraints() const override { return live().getNumNLPConstraints(); }
@@ -246,7 +254,9 @@ NB_MODULE(_trajopt_sqp, m) {
         .value("PENALTY_ITERATION_LIMIT", tsqp::SQPStatus::kPenaltyIterationLimit, "Reached penalty iteration limit")
         .value("OPT_TIME_LIMIT", tsqp::SQPStatus::kTimeLimit, "Reached time limit")
         .value("QP_SOLVER_ERROR", tsqp::SQPStatus::kQPSolveFailed, "QP solver failed")
-        .value("CALLBACK_STOPPED", tsqp::SQPStatus::kStoppedByCallback, "Stopped by callback");
+        .value("CALLBACK_STOPPED", tsqp::SQPStatus::kStoppedByCallback, "Stopped by callback")
+        .value("INVALID_PREDICTED_IMPROVEMENT", tsqp::SQPStatus::kInvalidPredictedImprovement,
+               "QP predicted a material worsening at the minimum trust region");
 
     m.def("toString", nb::overload_cast<tsqp::SQPStatus>(&tsqp::toString), "status"_a,
           "trajopt's text for a solver status (e.g. 'SQP_CONVERGED')");
@@ -270,8 +280,8 @@ NB_MODULE(_trajopt_sqp, m) {
                 "NLP converges if approx_merit_improve smaller than this (default: 1e-4)")
         .def_rw("min_approx_improve_frac", &tsqp::SQPParameters::min_approx_improve_frac,
                 "NLP converges if approx_merit_improve/best_exact_merit < this")
-        .def_rw("max_iterations", &tsqp::SQPParameters::max_iterations,
-                "Max number of QP calls allowed (default: 50)")
+        .def_rw("max_iter", &tsqp::SQPParameters::max_iter,
+                "Max convexifications per penalty iteration; rejected steps do not count (default: 50)")
         .def_rw("trust_shrink_ratio", &tsqp::SQPParameters::trust_shrink_ratio,
                 "Trust region scale factor when shrinking (default: 0.1)")
         .def_rw("trust_expand_ratio", &tsqp::SQPParameters::trust_expand_ratio,
@@ -290,6 +300,8 @@ NB_MODULE(_trajopt_sqp, m) {
                 "Initial constraint scaling coefficient (default: 10)")
         .def_rw("inflate_constraints_individually", &tsqp::SQPParameters::inflate_constraints_individually,
                 "If true, only violated constraints are inflated (default: true)")
+        .def_rw("sum_constraint_set_violations", &tsqp::SQPParameters::sum_constraint_set_violations,
+                "Use summed rather than maximum row violation per set; applied at solver init")
         .def_rw("initial_trust_box_size", &tsqp::SQPParameters::initial_trust_box_size,
                 "Initial trust region size (default: 0.1)")
         .def_rw("log_results", &tsqp::SQPParameters::log_results, "Enable logging (unused)")
@@ -360,11 +372,12 @@ NB_MODULE(_trajopt_sqp, m) {
     // ========== QPSolver (abstract base) ==========
 
     nb::class_<tsqp::QPSolver>(m, "QPSolver",
-        "Abstract base class for QP solvers")
+        "Abstract base class for QP solvers. Serialize all access to each solver instance.")
         .def("init", &tsqp::QPSolver::init, "num_vars"_a, "num_cnts"_a,
              "Initialize the QP solver")
         .def("clear", &tsqp::QPSolver::clear, "Clear the QP solver")
-        .def("solve", &tsqp::QPSolver::solve, "Solve the QP")
+        .def("solve", &tsqp::QPSolver::solve, "Solve the QP",
+             nb::call_guard<nb::gil_scoped_release>())
         .def("getSolution", &tsqp::QPSolver::getSolution, "Get the solution vector")
         .def("getSolverStatus", &tsqp::QPSolver::getSolverStatus, "Get solver status")
         // The QP: minimise x'Hx + g'x s.t. lower <= A x <= upper. Each update checks its size
@@ -426,7 +439,7 @@ NB_MODULE(_trajopt_sqp, m) {
         .def(nb::init<>())
         .def("init", &tsqp::OSQPEigenSolver::init, "num_vars"_a, "num_cnts"_a)
         .def("clear", &tsqp::OSQPEigenSolver::clear)
-        .def("solve", &tsqp::OSQPEigenSolver::solve)
+        .def("solve", &tsqp::OSQPEigenSolver::solve, nb::call_guard<nb::gil_scoped_release>())
         .def("getSolution", &tsqp::OSQPEigenSolver::getSolution)
         .def("getSolverStatus", &tsqp::OSQPEigenSolver::getSolverStatus)
         // OSQP settings — forwarded to solver_->settings()
@@ -457,6 +470,57 @@ NB_MODULE(_trajopt_sqp, m) {
         .def("setVerbosity", [](tsqp::OSQPEigenSolver& self, bool v) {
             self.solver_->settings()->setVerbosity(v); }, "verbose"_a,
             "Enable OSQP console output (default: false)");
+
+    // ========== PIQP (required by this modern build) ==========
+    nb::enum_<piqp::KKTSolver>(m, "PIQPKKTSolver", "PIQP's KKT system solver")
+        .value("dense_cholesky", piqp::KKTSolver::dense_cholesky)
+        .value("sparse_ldlt", piqp::KKTSolver::sparse_ldlt)
+        .value("sparse_ldlt_eq_cond", piqp::KKTSolver::sparse_ldlt_eq_cond)
+        .value("sparse_ldlt_ineq_cond", piqp::KKTSolver::sparse_ldlt_ineq_cond)
+        .value("sparse_ldlt_cond", piqp::KKTSolver::sparse_ldlt_cond)
+        .value("sparse_multistage", piqp::KKTSolver::sparse_multistage);
+
+    nb::class_<piqp::Settings<double>>(m, "PIQPSettings", "PIQP solver settings (piqp::Settings<double>)")
+        .def(nb::init<>(), "PIQP's own defaults")
+        .def_rw("rho_init", &piqp::Settings<double>::rho_init, "Initial primal proximal penalty")
+        .def_rw("delta_init", &piqp::Settings<double>::delta_init, "Initial augmented Lagrangian penalty")
+        .def_rw("eps_abs", &piqp::Settings<double>::eps_abs, "Absolute tolerance")
+        .def_rw("eps_rel", &piqp::Settings<double>::eps_rel, "Relative tolerance")
+        .def_rw("check_duality_gap", &piqp::Settings<double>::check_duality_gap, "Also stop on the duality gap")
+        .def_rw("eps_duality_gap_abs", &piqp::Settings<double>::eps_duality_gap_abs, "Absolute duality gap tolerance")
+        .def_rw("eps_duality_gap_rel", &piqp::Settings<double>::eps_duality_gap_rel, "Relative duality gap tolerance")
+        .def_rw("infeasibility_threshold", &piqp::Settings<double>::infeasibility_threshold, "Threshold for the infeasibility detection")
+        .def_rw("reg_lower_limit", &piqp::Settings<double>::reg_lower_limit, "Lower limit of the regularization")
+        .def_rw("reg_finetune_lower_limit", &piqp::Settings<double>::reg_finetune_lower_limit, "Fine-tune lower limit of the regularization")
+        .def_rw("reg_finetune_primal_update_threshold", &piqp::Settings<double>::reg_finetune_primal_update_threshold, "Primal updates before fine-tuning the regularization")
+        .def_rw("reg_finetune_dual_update_threshold", &piqp::Settings<double>::reg_finetune_dual_update_threshold, "Dual updates before fine-tuning the regularization")
+        .def_rw("max_iter", &piqp::Settings<double>::max_iter, "Maximum number of iterations")
+        .def_rw("max_factor_retires", &piqp::Settings<double>::max_factor_retires, "Maximum number of factorization retries")
+        .def_rw("preconditioner_scale_cost", &piqp::Settings<double>::preconditioner_scale_cost, "Scale the cost in the preconditioner")
+        .def_rw("preconditioner_reuse_on_update", &piqp::Settings<double>::preconditioner_reuse_on_update, "Reuse the preconditioner when the problem is updated")
+        .def_rw("preconditioner_iter", &piqp::Settings<double>::preconditioner_iter, "Preconditioner iterations")
+        .def_rw("tau", &piqp::Settings<double>::tau, "Maximum step size fraction to the boundary")
+        .def_rw("kkt_solver", &piqp::Settings<double>::kkt_solver, "KKT system solver")
+        .def_rw("iterative_refinement_always_enabled", &piqp::Settings<double>::iterative_refinement_always_enabled, "Always run iterative refinement")
+        .def_rw("iterative_refinement_eps_abs", &piqp::Settings<double>::iterative_refinement_eps_abs, "Iterative refinement absolute tolerance")
+        .def_rw("iterative_refinement_eps_rel", &piqp::Settings<double>::iterative_refinement_eps_rel, "Iterative refinement relative tolerance")
+        .def_rw("iterative_refinement_max_iter", &piqp::Settings<double>::iterative_refinement_max_iter, "Iterative refinement maximum iterations")
+        .def_rw("iterative_refinement_min_improvement_rate", &piqp::Settings<double>::iterative_refinement_min_improvement_rate, "Iterative refinement minimum improvement rate")
+        .def_rw("iterative_refinement_static_regularization_eps", &piqp::Settings<double>::iterative_refinement_static_regularization_eps, "Iterative refinement static regularization")
+        .def_rw("iterative_refinement_static_regularization_rel", &piqp::Settings<double>::iterative_refinement_static_regularization_rel, "Iterative refinement relative static regularization")
+        .def_rw("verbose", &piqp::Settings<double>::verbose, "Print solver progress")
+        .def_rw("compute_timings", &piqp::Settings<double>::compute_timings, "Measure the solver timings");
+
+    nb::class_<tsqp::PIQPSolver, tsqp::QPSolver>(m, "PIQPSolver", "PIQP-based (interior point) QP solver")
+        .def(nb::init<>(), "With trajopt's default PIQP settings")
+        .def_rw("settings", &tsqp::PIQPSolver::settings, "PIQP settings, applied when the solver is next set up")
+        .def_static("defaultSettings", [] {
+            piqp::Settings<double> settings;
+            tsqp::PIQPSolver::setDefaultPIQPSettings(settings);
+            return settings;
+        }, "The PIQP settings trajopt uses by default")
+        .def("reusedSetup", &tsqp::PIQPSolver::reusedSetup,
+             "Whether the last solve reused the previous setup (only the vectors changed)");
 
     // ========== QPProblem (abstract base) ==========
 
@@ -545,6 +609,8 @@ NB_MODULE(_trajopt_sqp, m) {
              "Set trust region box size")
         .def("setConstraintMeritCoeff", &tsqp::QPProblem::setConstraintMeritCoeff,
              "merit_coeff"_a, "Set constraint merit coefficients")
+        .def("setSumConstraintSetViolations", &tsqp::QPProblem::setSumConstraintSetViolations,
+             "sum"_a, "Select summed or largest row violation per constraint set")
         .def("getBoxSize", nb::overload_cast<>(&tsqp::QPProblem::getBoxSize, nb::const_),
              "Get trust region box size")
         .def("getConstraintMeritCoeff", &tsqp::QPProblem::getConstraintMeritCoeff,
@@ -621,7 +687,8 @@ NB_MODULE(_trajopt_sqp, m) {
 
     nb::class_<tsqp::TrustRegionSQPSolver>(
         m, "TrustRegionSQPSolver",
-        "Trust region SQP solver for trajectory optimization.\n\n"
+        "Trust region SQP solver for trajectory optimization. Serialize all access to each "
+        "solver and its mutable problem during solving.\n\n"
         "Key methods for real-time/incremental optimization:\n"
         "  - init(qp_prob): Initialize solver with problem\n"
         "  - stepSQPSolver(): Run ONE SQP iteration (for real-time control)\n"
@@ -641,15 +708,17 @@ NB_MODULE(_trajopt_sqp, m) {
              "  solver.init(problem)\n"
              "  while solver.getStatus() == SQPStatus.RUNNING:\n"
              "      solver.stepSQPSolver()\n"
-             "      # Check constraints, update environment, etc.")
+             "      # Check constraints, update environment, etc.",
+             nb::call_guard<nb::gil_scoped_release>())
         .def("verifySQPSolverConvergence", &tsqp::TrustRegionSQPSolver::verifySQPSolverConvergence,
              "Check if SQP constraints are satisfied")
         .def("adjustPenalty", &tsqp::TrustRegionSQPSolver::adjustPenalty,
              "Increase penalty on constraints when SQP reports convergence but constraints violated")
         .def("runTrustRegionLoop", &tsqp::TrustRegionSQPSolver::runTrustRegionLoop,
-             "Run trust region loop (adjusts box size)")
+             "Run trust region loop (adjusts box size)", nb::call_guard<nb::gil_scoped_release>())
         .def("solveQPProblem", &tsqp::TrustRegionSQPSolver::solveQPProblem,
-             "Solve current QP problem, store results, call callbacks")
+             "Solve current QP problem, store results, call callbacks",
+             nb::call_guard<nb::gil_scoped_release>())
         .def("setBoxSize", &tsqp::TrustRegionSQPSolver::setBoxSize, "box_size"_a,
              "Set trust region box size (for online planning control)")
         .def("callCallbacks", &tsqp::TrustRegionSQPSolver::callCallbacks,

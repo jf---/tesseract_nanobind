@@ -4,6 +4,7 @@
  */
 
 #include "tesseract_nb.h"
+#include "name_compat.h"
 #include <nanobind/stl/unordered_map.h>
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/unique_ptr.h>
@@ -257,6 +258,10 @@ NB_MODULE(_tesseract_kinematics, m) {
         .def("getLinkIds", &tk::JointGroup::getLinkIds)
         .def("getActiveLinkIds", &tk::JointGroup::getActiveLinkIds)
         .def("getStaticLinkIds", &tk::JointGroup::getStaticLinkIds)
+        .def("getJointNames", [](const tk::JointGroup& self) { return tesseract_nb::names(self.getJointIds()); })
+        .def("getLinkNames", [](const tk::JointGroup& self) { return tesseract_nb::names(self.getLinkIds()); })
+        .def("getActiveLinkNames", [](const tk::JointGroup& self) { return tesseract_nb::names(self.getActiveLinkIds()); })
+        .def("getStaticLinkNames", [](const tk::JointGroup& self) { return tesseract_nb::names(self.getStaticLinkIds()); })
         .def("isActiveLinkId", &tk::JointGroup::isActiveLinkId, "link_id"_a)
         .def("hasLinkId", &tk::JointGroup::hasLinkId, "link_id"_a)
         .def("getLimits", &tk::JointGroup::getLimits)

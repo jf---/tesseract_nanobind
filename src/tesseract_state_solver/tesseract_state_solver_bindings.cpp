@@ -4,6 +4,7 @@
  */
 
 #include "tesseract_nb.h"
+#include "name_compat.h"
 #include <nanobind/stl/map.h>
 #include <algorithm>
 #include <stdexcept>
@@ -268,6 +269,11 @@ NB_MODULE(_tesseract_state_solver, m) {
         .def("getLinkIds", &tsg::StateSolver::getLinkIds)
         .def("getActiveLinkIds", &tsg::StateSolver::getActiveLinkIds)
         .def("getStaticLinkIds", &tsg::StateSolver::getStaticLinkIds)
+        .def("getJointNames", [](const tsg::StateSolver& self) { return tesseract_nb::names(self.getJointIds()); })
+        .def("getActiveJointNames", [](const tsg::StateSolver& self) { return tesseract_nb::names(self.getActiveJointIds()); })
+        .def("getLinkNames", [](const tsg::StateSolver& self) { return tesseract_nb::names(self.getLinkIds()); })
+        .def("getActiveLinkNames", [](const tsg::StateSolver& self) { return tesseract_nb::names(self.getActiveLinkIds()); })
+        .def("getStaticLinkNames", [](const tsg::StateSolver& self) { return tesseract_nb::names(self.getStaticLinkIds()); })
         // Link queries
         .def("isActiveLinkId", &tsg::StateSolver::isActiveLinkId, "link_id"_a)
         .def("hasLinkId", &tsg::StateSolver::hasLinkId, "link_id"_a)

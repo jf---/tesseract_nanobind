@@ -140,6 +140,10 @@ NB_MODULE(_tesseract_scene_graph, m) {
         .def_rw("axis", &tsg::Joint::axis)
         .def_rw("child_link_id", &tsg::Joint::child_link_id, nb::rv_policy::copy)
         .def_rw("parent_link_id", &tsg::Joint::parent_link_id, nb::rv_policy::copy)
+        .def_prop_rw("child_link_name", [](const tsg::Joint& self) { return self.child_link_id.name(); },
+                     [](tsg::Joint& self, const std::string& name) { self.child_link_id = tesseract::common::LinkId(name); })
+        .def_prop_rw("parent_link_name", [](const tsg::Joint& self) { return self.parent_link_id.name(); },
+                     [](tsg::Joint& self, const std::string& name) { self.parent_link_id = tesseract::common::LinkId(name); })
         .def_rw("parent_to_joint_origin_transform", &tsg::Joint::parent_to_joint_origin_transform)
         .def_rw("dynamics", &tsg::Joint::dynamics)
         .def_rw("limits", &tsg::Joint::limits)

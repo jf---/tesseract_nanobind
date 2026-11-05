@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot name="rail_arm" xmlns:tesseract="http://www.tesseract.com" tesseract:make_convex="true">
+  <link name="world"/>
+  <link name="rail_base"><visual><geometry><box size="3 0.3 0.1"/></geometry></visual>
+    <collision><geometry><box size="3 0.3 0.1"/></geometry></collision></link>
+  <joint name="world_to_rail" type="fixed"><parent link="world"/><child link="rail_base"/></joint>
+  <link name="carriage"><visual><geometry><box size="0.3 0.3 0.15"/></geometry></visual>
+    <collision><geometry><box size="0.3 0.3 0.15"/></geometry></collision></link>
+  <joint name="rail" type="prismatic"><parent link="rail_base"/><child link="carriage"/>
+    <origin xyz="0 0 0.12"/><axis xyz="1 0 0"/><limit lower="-1.2" upper="1.2" effort="100" velocity="1"/></joint>
+  <link name="arm_base"/>
+  <joint name="carriage_to_arm" type="fixed"><parent link="carriage"/><child link="arm_base"/><origin xyz="0 0 0.1"/></joint>
+  <link name="link_1"><visual><geometry><cylinder radius="0.06" length="0.2"/></geometry></visual></link>
+  <joint name="arm_joint_1" type="revolute"><parent link="arm_base"/><child link="link_1"/>
+    <origin xyz="0 0 0.1"/><axis xyz="0 0 1"/><limit lower="-3.14" upper="3.14" effort="50" velocity="2"/></joint>
+  <link name="link_2"><visual><geometry><cylinder radius="0.05" length="0.4"/></geometry></visual></link>
+  <joint name="arm_joint_2" type="revolute"><parent link="link_1"/><child link="link_2"/>
+    <origin xyz="0 0 0.1"/><axis xyz="0 1 0"/><limit lower="-3.14" upper="3.14" effort="50" velocity="2"/></joint>
+  <link name="link_3"><visual><geometry><cylinder radius="0.04" length="0.4"/></geometry></visual></link>
+  <joint name="arm_joint_3" type="revolute"><parent link="link_2"/><child link="link_3"/>
+    <origin xyz="0 0 0.4"/><axis xyz="0 1 0"/><limit lower="-3.14" upper="3.14" effort="50" velocity="2"/></joint>
+  <link name="link_4"/>
+  <joint name="arm_joint_4" type="revolute"><parent link="link_3"/><child link="link_4"/>
+    <origin xyz="0 0 0.4"/><axis xyz="0 0 1"/><limit lower="-3.14" upper="3.14" effort="50" velocity="2"/></joint>
+  <link name="link_5"/>
+  <joint name="arm_joint_5" type="revolute"><parent link="link_4"/><child link="link_5"/>
+    <origin xyz="0 0 0.1"/><axis xyz="0 1 0"/><limit lower="-3.14" upper="3.14" effort="50" velocity="2"/></joint>
+  <link name="link_6"/>
+  <joint name="arm_joint_6" type="revolute"><parent link="link_5"/><child link="link_6"/>
+    <origin xyz="0 0 0.05"/><axis xyz="0 0 1"/><limit lower="-3.14" upper="3.14" effort="50" velocity="2"/></joint>
+  <link name="arm_tool0"/>
+  <joint name="arm_to_tool0" type="fixed"><parent link="link_6"/><child link="arm_tool0"/><origin xyz="0 0 0.05"/></joint>
+</robot>

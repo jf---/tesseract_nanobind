@@ -1,0 +1,29 @@
+kinematic_plugins:
+  search_libraries:
+    - tesseract_kinematics_kdl_factories
+  fwd_kin_plugins:
+    rail_arm:
+      default: KDLFwdKinChain
+      plugins:
+        KDLFwdKinChain:
+          class: KDLFwdKinChainFactory
+          config: {base_link: rail_base, tip_link: arm_tool0}
+    arm:
+      default: KDLFwdKinChain
+      plugins:
+        KDLFwdKinChain:
+          class: KDLFwdKinChainFactory
+          config: {base_link: arm_base, tip_link: arm_tool0}
+  inv_kin_plugins:
+    rail_arm:
+      default: KDLInvKinChainLMA
+      plugins:
+        KDLInvKinChainLMA:
+          class: KDLInvKinChainLMAFactory
+          config: {base_link: rail_base, tip_link: arm_tool0}
+    arm:
+      default: KDLInvKinChainLMA
+      plugins:
+        KDLInvKinChainLMA:
+          class: KDLInvKinChainLMAFactory
+          config: {base_link: arm_base, tip_link: arm_tool0}

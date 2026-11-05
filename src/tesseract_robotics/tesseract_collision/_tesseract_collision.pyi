@@ -15,6 +15,7 @@ import numpy
 from numpy.typing import NDArray
 
 import tesseract_robotics.tesseract_common._tesseract_common
+import tesseract_robotics.tesseract_state_solver._tesseract_state_solver
 import tesseract_robotics.tesseract_geometry._tesseract_geometry
 
 
@@ -96,6 +97,12 @@ class ContactResult:
 
     @link_ids.setter
     def link_ids(self, arg: Sequence[tesseract_robotics.tesseract_common._tesseract_common.LinkId | str], /) -> None: ...
+
+    @property
+    def link_names(self) -> list[str]: ...
+
+    @link_names.setter
+    def link_names(self, arg: Sequence[str], /) -> None: ...
 
     @property
     def shape_id(self) -> list[int]: ...
@@ -847,3 +854,22 @@ class ConvexDecompositionVHACD(ConvexDecomposition):
 
     @overload
     def __init__(self, params: VHACDParameters) -> None: ...
+
+
+class InvalidBatch(Exception): ...
+
+class UnsupportedBatchContext(Exception): ...
+
+def check_batched_state_rows(
+    solver: tesseract_robotics.tesseract_state_solver._tesseract_state_solver.StateSolver,
+    manager: DiscreteContactManager,
+    names: Sequence[str],
+    rows: Annotated[NDArray[numpy.float64], dict(shape=(None, None))],
+    limits: Annotated[NDArray[numpy.float64], dict(shape=(None, 2))],
+) -> tuple[str, int, str, str, float]:
+    """Return status, failing row index, sorted link names and distance in metres.
+
+    The manager and solver must be worker-owned. Apply the intended margin and
+    allowed-collision rule before calling. The function supports native OFKT,
+    Bullet BVH and native environment/ACM validators only.
+    """

@@ -184,6 +184,8 @@ public:
 
 }  // namespace
 
+void bind_batch_state_checks(nanobind::module_& module);
+
 NB_MODULE(_tesseract_collision, m) {
     // Import geometry module for tesseract::geometry::{Geometry,Mesh,ConvexMesh} (else stubs quote the
     // C++ name). It imports tesseract_common in turn, which covers Isometry3d, ACM and CollisionMarginData.
@@ -242,6 +244,11 @@ NB_MODULE(_tesseract_collision, m) {
         .def_rw("distance", &tc::ContactResult::distance)
         .def_rw("type_id", &tc::ContactResult::type_id)
         .def_rw("link_ids", &tc::ContactResult::link_ids)
+        .def_prop_rw("link_names", [](const tc::ContactResult& self) {
+            return std::array<std::string, 2>{self.link_ids[0].name(), self.link_ids[1].name()};
+        }, [](tc::ContactResult& self, const std::array<std::string, 2>& names) {
+            self.link_ids = {tcommon::LinkId(names[0]), tcommon::LinkId(names[1])};
+        })
         .def_rw("shape_id", &tc::ContactResult::shape_id)
         .def_rw("subshape_id", &tc::ContactResult::subshape_id)
         .def_rw("nearest_points", &tc::ContactResult::nearest_points)
@@ -822,4 +829,6 @@ NB_MODULE(_tesseract_collision, m) {
     nb::class_<tc::ConvexDecompositionVHACD, tc::ConvexDecomposition>(m, "ConvexDecompositionVHACD")
         .def(nb::init<>())
         .def(nb::init<const tc::VHACDParameters&>(), "params"_a);
+
+    bind_batch_state_checks(m);
 }

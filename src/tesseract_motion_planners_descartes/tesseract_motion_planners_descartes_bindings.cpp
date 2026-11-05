@@ -9,6 +9,8 @@
  */
 
 #include "tesseract_nb.h"
+#include "bgl_dijkstra_solver_profile.h"
+#include "scaled_squared_l2_edge_evaluator.h"
 
 #include <sstream>
 
@@ -234,6 +236,14 @@ NB_MODULE(_tesseract_motion_planners_descartes, m) {
         .def("evaluate", &dl::EdgeEvaluator<double>::evaluate, "start"_a, "end"_a,
              "Returns (is_valid, cost) for the edge between two states");
 
+    using ScaledSquaredL2 = tesseract_nb::ScaledSquaredL2EdgeEvaluator<double>;
+    nb::exception<tesseract_nb::EdgeScaleError>(m, "EdgeScaleError", PyExc_ValueError);
+    nb::exception<tesseract_nb::EdgeDofMismatchError>(m, "EdgeDofMismatchError", PyExc_ValueError);
+    nb::exception<tesseract_nb::EdgeCostError>(m, "EdgeCostError", PyExc_ValueError);
+    nb::class_<ScaledSquaredL2, dl::EdgeEvaluator<double>>(m, "ScaledSquaredL2EdgeEvaluatorD")
+        .def(nb::init<const Eigen::VectorXd&>(), "scale"_a)
+        .def_prop_ro("scale", &ScaledSquaredL2::scale);
+
     // ========== descartes_light::WaypointSampler<double> ==========
     nb::class_<dl::WaypointSampler<double>, PyWaypointSamplerD>(m, "DescartesWaypointSamplerD")
         .def(nb::init<>())
@@ -272,6 +282,28 @@ NB_MODULE(_tesseract_motion_planners_descartes, m) {
         return std::static_pointer_cast<tc::Profile>(profile);
     }, "profile"_a,
     "Cast DescartesLadderGraphSolverProfileD to Profile for use with ProfileDictionary");
+
+    using BGLProfile = tesseract_nb::DescartesBGLDijkstraSolverProfile<double>;
+    nb::exception<tesseract_nb::InvalidBGLCost>(m, "InvalidBGLCost", PyExc_ValueError);
+    nb::exception<tesseract_nb::BGLThreadCountError>(m, "BGLThreadCountError", PyExc_ValueError);
+    nb::class_<BGLProfile, tp::DescartesSolverProfile<double>>(m, "DescartesBGLDijkstraSolverProfileD",
+        "Lazy Dijkstra: all candidate costs must be finite and nonnegative, including unvisited edges.")
+        .def(nb::init<>())
+        .def_prop_rw("num_threads", [](const BGLProfile& self) { return self.num_threads; },
+            [](BGLProfile& self, int n) {
+                if (n != 1) throw tesseract_nb::BGLThreadCountError("num_threads must be 1: BGL vertex build is not thread safe");
+                self.num_threads = n;
+            })
+        .def_prop_ro("edges_evaluated", &BGLProfile::edgesEvaluated)
+        .def_prop_ro("graph_edges", &BGLProfile::graphEdges)
+        .def_prop_ro("graph_vertices", &BGLProfile::graphVertices)
+        .def_prop_ro("build_ns", &BGLProfile::buildNanoseconds)
+        .def_prop_ro("search_ns", &BGLProfile::searchNanoseconds)
+        .def_prop_ro("invalid_cost_kind", &BGLProfile::invalidCostKind,
+            "0 if valid; 1 sample, 2 state, 3 edge, 4 vertex, 5 combined edge or 6 path was invalid.");
+    m.def("cast_DescartesSolverProfileD", [](std::shared_ptr<BGLProfile> profile) {
+        return std::static_pointer_cast<tc::Profile>(profile);
+    }, "profile"_a);
 
     // ========== DescartesMoveProfile<double> (base, was DescartesPlanProfile) ==========
     // Python users may subclass this and override createWaypointSampler/
