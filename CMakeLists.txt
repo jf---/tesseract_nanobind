@@ -193,6 +193,7 @@ add_tesseract_nanobind_extension(
   tesseract::scene_graph
   tesseract::common
 )
+target_sources(_tesseract_state_solver PRIVATE src/tesseract_state_solver/workpiece_pose_rows.cpp)
 
 # Add tesseract_kinematics module
 add_tesseract_nanobind_extension(

@@ -107,8 +107,11 @@ void require_link(const tsg::StateSolver& solver, const tc::LinkId& link_id, con
 
 }  // namespace
 
+void bind_workpiece_pose_rows(nb::module_& module);
+
 NB_MODULE(_tesseract_state_solver, m) {
     m.doc() = "tesseract_state_solver Python bindings";
+    bind_workpiece_pose_rows(m);
 
     // Import common module for the Isometry3d type (else stubs quote the C++ name, which is compiler-specific);
     // LinkId / JointId are registered there too

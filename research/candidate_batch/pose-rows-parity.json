@@ -1,0 +1,169 @@
+{
+  "matched": true,
+  "scene_restored": true,
+  "records": [
+    {
+      "edge": 10,
+      "fixture": [
+        0.0,
+        1.1
+      ],
+      "rows": 528,
+      "max_position_difference_m": 4.235164736271502e-22,
+      "max_orientation_difference_rad": 0.0,
+      "decision_mismatches": 0,
+      "matched": true
+    },
+    {
+      "edge": 33,
+      "fixture": [
+        1.5708,
+        1.1
+      ],
+      "rows": 528,
+      "max_position_difference_m": 2.2111117461715707e-16,
+      "max_orientation_difference_rad": 1.8253644716624898e-16,
+      "decision_mismatches": 0,
+      "matched": true
+    },
+    {
+      "edge": 10,
+      "fixture": [
+        0.0,
+        1.1
+      ],
+      "rows": 528,
+      "max_position_difference_m": 4.235164736271502e-22,
+      "max_orientation_difference_rad": 0.0,
+      "decision_mismatches": 0,
+      "matched": true
+    },
+    {
+      "edge": "penetration-witness",
+      "fixture": [
+        1.56979,
+        1.1
+      ],
+      "rows": 33,
+      "max_position_difference_m": 5.241762079939201e-17,
+      "max_orientation_difference_rad": 2.1327225071473184e-16,
+      "decision_mismatches": 0,
+      "matched": true
+    }
+  ],
+  "boundary": [
+    {
+      "label": "position_offset_0.004999",
+      "scalar": [
+        0.004998999999999976,
+        0.0
+      ],
+      "native": [
+        0.004998999999999976,
+        0.0
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "position_offset_0.005",
+      "scalar": [
+        0.0050000000000001155,
+        0.0
+      ],
+      "native": [
+        0.0050000000000001155,
+        0.0
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    },
+    {
+      "label": "position_offset_0.005001",
+      "scalar": [
+        0.005001000000000033,
+        0.0
+      ],
+      "native": [
+        0.005001000000000033,
+        0.0
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.0",
+      "scalar": [
+        2.220446049250313e-16,
+        0.0
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.0
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.08726546259971647",
+      "scalar": [
+        2.220446049250313e-16,
+        0.08726546259971613
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.08726546259971613
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.08726646259971647",
+      "scalar": [
+        2.220446049250313e-16,
+        0.08726646259971604
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.08726646259971604
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.08726746259971647",
+      "scalar": [
+        2.220446049250313e-16,
+        0.08726746259971614
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.08726746259971614
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_3.141591653589793",
+      "scalar": [
+        2.220446049250313e-16,
+        3.1415916535897934
+      ],
+      "native": [
+        2.220446049250313e-16,
+        3.1415916535897934
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    }
+  ],
+  "scope": "saved generated process samples plus real-cell threshold and near-pi targets; correctness only"
+}
