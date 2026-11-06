@@ -1,0 +1,34 @@
+{
+  "rows": 578,
+  "rejected": 16,
+  "fixtures": [
+    [
+      -1.56979,
+      1.1
+    ],
+    [
+      1.56979,
+      1.1
+    ],
+    [
+      -1.56979,
+      1.1
+    ]
+  ],
+  "positive_first_m": 0.04586703928879171,
+  "negative_all_m": -0.0745427771534624,
+  "witness_verdicts": [
+    [
+      "sampled_collision"
+    ],
+    [
+      "clear"
+    ],
+    [
+      "sampled_collision"
+    ]
+  ],
+  "fixture_scene_restored": true,
+  "setup_s": 2.5658526250044815,
+  "scope": "actual generated candidate rows, collision only, finite sampled checks"
+}

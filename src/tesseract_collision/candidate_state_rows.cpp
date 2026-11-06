@@ -28,12 +28,13 @@ static std::vector<std::string> classify_rows(std::shared_ptr<ts::StateSolver> s
                                               std::vector<std::string> names,
                                               Eigen::MatrixXd rows,
                                               Eigen::MatrixXd limits,
-                                              bool first_screen)
+                                              bool first_screen,
+                                              bool check_limits)
 {
       if (!solver || !manager || names.empty() || rows.rows() == 0 ||
-          rows.cols() != static_cast<long>(names.size()) || limits.rows() != static_cast<long>(names.size()) ||
-          limits.cols() != 2 || !rows.allFinite() || !limits.allFinite() ||
-          (limits.col(0).array() > limits.col(1).array()).any())
+          rows.cols() != static_cast<long>(names.size()) || !rows.allFinite() ||
+          (check_limits && (limits.rows() != static_cast<long>(names.size()) || limits.cols() != 2 ||
+                            !limits.allFinite() || (limits.col(0).array() > limits.col(1).array()).any())))
         throw InvalidBatch("invalid batch rows, limits, solver, or manager");
       const auto& solver_ref = *solver.get();
       const auto& manager_ref = *manager.get();
@@ -66,7 +67,7 @@ static std::vector<std::string> classify_rows(std::shared_ptr<ts::StateSolver> s
         for (Eigen::Index i = 0; i < rows.rows(); ++i)
         {
           Eigen::VectorXd q = rows.row(i).transpose();
-          if ((q.array() < limits.col(0).array()).any() || (q.array() > limits.col(1).array()).any())
+          if (check_limits && ((q.array() < limits.col(0).array()).any() || (q.array() > limits.col(1).array()).any()))
           {
             verdicts.emplace_back("joint_limit");
             continue;
@@ -113,11 +114,21 @@ void bind_candidate_state_rows(nb::module_& module)
                      Eigen::MatrixXd rows,
                      Eigen::MatrixXd limits) {
         return classify_rows(std::move(solver), std::move(manager), std::move(names),
-                             std::move(rows), std::move(limits), first_screen);
+                             std::move(rows), std::move(limits), first_screen, true);
       }, nb::arg("solver"), nb::arg("manager"), nb::arg("names"), nb::arg("rows"), nb::arg("limits"),
       "Classify ordered full-cell candidates using an exclusively owned solver and manager. "
       "Apply ACM and margins before each call; check deadline before and after bounded calls.");
   };
   bind("classify_candidate_state_rows", false);
   bind("classify_candidate_state_rows_first", true);
+  module.def("classify_collision_state_rows_first",
+    [](std::shared_ptr<ts::StateSolver> solver,
+       std::shared_ptr<tc::DiscreteContactManager> manager,
+       std::vector<std::string> names,
+       Eigen::MatrixXd rows) {
+      return classify_rows(std::move(solver), std::move(manager), std::move(names),
+                           std::move(rows), Eigen::MatrixXd(), true, false);
+    }, nb::arg("solver"), nb::arg("manager"), nb::arg("names"), nb::arg("rows"),
+    "Classify collision for every finite ordered row without a joint-limit screen. "
+    "The caller owns its solver and manager and applies ACM and margins before each call.");
 }
