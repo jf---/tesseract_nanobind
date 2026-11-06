@@ -1,6 +1,6 @@
 # Threading and the GIL
 
-47 bindings release the GIL, each one listed with its reason in
+Bindings that release the GIL are listed with their reasons in
 [`scripts/nogil_entry_points.yaml`](https://github.com/tesseract-robotics/tesseract_nanobind/blob/main/scripts/nogil_entry_points.yaml)
 (#124). Every other binding holds the GIL for the whole call. The list is checked, not trusted:
 `pixi run -e audit audit-gil` parses every binding TU and fails CI when a binding and the list
@@ -8,15 +8,23 @@ disagree, in either direction. Run-time tests check that each release added by #
 the GIL. New candidates come from measurement: `pixi run gil-hotspots` ranks the bindings that hold
 the GIL longest in the benchmarks and the test suite.
 
+For fixed-topology OFKT scenes, the additive `OFKTStateSolver.getStateConcurrent`
+map entry point copies and validates its inputs before releasing the GIL. OFKT
+synchronizes state reads and updates internally; do not change topology across
+validation and the call. The existing base `getState` stays GIL-held, and KDL
+does not expose this entry point. Give each planning worker an independent
+scene and group. Inverse-kinematics inputs are copied before releasing the GIL;
+this does not imply third-party solver plugins are thread-safe.
+
 Two caveats. First, `Environment` stays mostly GIL-held, because one deadlock is known (see
 [Known limitation](#known-limitation-environment-event-callbacks)) and its fix is a separate change.
 Second, the plugin factories are slow but can't release the GIL until upstream synchronises their
 caches (see [Upstream](#upstream-plugin-factory-caches)).
 
 !!! success "Confirmed"
-    `audit-gil`: 47 releases, all listed. The audit's contract tests (`pixi run -e audit
-    audit-test`), the run-time release tests and the full test suite pass (macOS arm64,
-    Python 3.14, 2026-10-24).
+    On 2026-10-24, `audit-gil` found 47 listed releases; the audit contract tests,
+    run-time release tests and full test suite passed on macOS arm64 and Python 3.14.
+    The additional entries above are covered by the isolated focused tests.
 
 !!! warning "Incomplete"
     The `Environment` deadlock fix and the plugin-factory releases are remaining work: see

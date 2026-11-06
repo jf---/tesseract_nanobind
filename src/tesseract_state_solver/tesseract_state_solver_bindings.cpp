@@ -324,6 +324,19 @@ NB_MODULE(_tesseract_state_solver, m) {
 
     // ========== OFKTStateSolver (concrete, mutable) ==========
     nb::class_<tsg::OFKTStateSolver, tsg::MutableStateSolver>(m, "OFKTStateSolver")
+        .def("getStateConcurrent", [](const tsg::OFKTStateSolver& self,
+                                      const tsg::SceneState::JointValues& joint_values,
+                                      const tc::JointIdTransformMap& floating_joint_values) {
+            // OFKT synchronizes state reads and updates internally; keep topology fixed
+            // across validation and the call, and never release borrowed Python inputs.
+            const tsg::SceneState::JointValues owned_joints = joint_values;
+            const tc::JointIdTransformMap owned_floating = floating_joint_values;
+            validate_joint_names(self, keys_of(owned_joints), "getStateConcurrent");
+            validate_floating_joints(self, owned_floating, "getStateConcurrent");
+            nb::gil_scoped_release release;
+            return self.getState(owned_joints, owned_floating);
+        }, "joint_values"_a, "floating_joint_values"_a = tc::JointIdTransformMap{},
+           "Get an OFKT state without the GIL; topology must remain fixed during the call.")
         // `prefix` stays unbound: upstream 0.35.0 looks the prefixed root up in the unprefixed
         // graph (ofkt_state_solver.cpp:1053, :1075) and throws for any non-empty prefix (#247)
         .def(nb::init<const tsg::SceneGraph&>(), "scene_graph"_a)

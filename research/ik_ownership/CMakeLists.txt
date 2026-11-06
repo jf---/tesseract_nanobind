@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.15)
+project(ik_ownership_probe LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+find_package(Python 3.12 REQUIRED COMPONENTS Interpreter Development.Module Development.SABIModule)
+find_package(nanobind CONFIG REQUIRED)
+find_package(tesseract REQUIRED COMPONENTS kinematics)
+nanobind_add_module(ik_ownership_probe STABLE_ABI probe.cpp)
+target_link_libraries(ik_ownership_probe PRIVATE tesseract::kinematics)

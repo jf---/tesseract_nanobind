@@ -80,7 +80,13 @@ trajopt_sqp:
   TrustRegionSQPSolver:
     solve: Runs the full SQP optimization.
 
+tesseract_state_solver:
+  OFKTStateSolver:
+    getStateConcurrent: Copies the state inputs; OFKT synchronizes reads with state updates.
+
 tesseract_kinematics:
+  JointGroup:
+    calcFwdKin: Copies the joint input and computes native FK without the GIL.
   InverseKinematics:
     calcInvKin: Numerical solvers (TRAC-IK, KDL) iterate until their timeout.
   KinematicGroup:

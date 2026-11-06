@@ -197,8 +197,10 @@ NB_MODULE(_tesseract_kinematics, m) {
                               const std::unordered_map<tcommon::LinkId, Eigen::Isometry3d>& tip_link_poses,
                               const Eigen::Ref<const Eigen::VectorXd>& seed) {
             const tcommon::LinkIdTransformMap poses(tip_link_poses.begin(), tip_link_poses.end());
-            return self.calcInvKin(poses, seed);
-        }, "tip_link_poses"_a, "seed"_a, nb::call_guard<nb::gil_scoped_release>())
+            const Eigen::VectorXd owned_seed = seed;
+            nb::gil_scoped_release release;
+            return self.calcInvKin(poses, owned_seed);
+        }, "tip_link_poses"_a, "seed"_a)
         .def("getJointIds", &tk::InverseKinematics::getJointIds)
         .def("numJoints", &tk::InverseKinematics::numJoints)
         .def("getBaseLinkId", &tk::InverseKinematics::getBaseLinkId)
@@ -221,8 +223,16 @@ NB_MODULE(_tesseract_kinematics, m) {
              "name"_a, "joint_ids"_a, "scene_graph"_a, "scene_state"_a)
         .def("calcFwdKin", [](const tk::JointGroup& self,
                               const Eigen::Ref<const Eigen::VectorXd>& joint_angles) {
-            const auto result = self.calcFwdKin(joint_angles);
-            // LinkIdTransformMap -> plain dict keyed by LinkId (indexable by str)
+            if (joint_angles.size() != static_cast<Eigen::Index>(self.numJoints()))
+                throw nb::value_error("calcFwdKin: joint vector size must equal numJoints");
+            // The Eigen view can alias writable Python memory. Copy it before releasing the GIL.
+            const Eigen::VectorXd owned_angles = joint_angles;
+            tcommon::LinkIdTransformMap result;
+            {
+                nb::gil_scoped_release release;
+                result = self.calcFwdKin(owned_angles);
+            }
+            // Conversion to Python happens after the release scope ends.
             return std::unordered_map<tcommon::LinkId, Eigen::Isometry3d>(result.begin(), result.end());
         }, "joint_angles"_a)
         // The four C++ overloads in header order (joint_group.h:96, :106, :117, :129). nanobind
@@ -278,8 +288,10 @@ NB_MODULE(_tesseract_kinematics, m) {
     auto inv_kin_from_list = [](const tk::KinematicGroup& self,
                                 const std::vector<tk::KinGroupIKInput>& tip_link_poses,
                                 const Eigen::Ref<const Eigen::VectorXd>& seed) {
-        tk::KinGroupIKInputs inputs(tip_link_poses.begin(), tip_link_poses.end());
-        return self.calcInvKin(inputs, seed);
+        const tk::KinGroupIKInputs inputs(tip_link_poses.begin(), tip_link_poses.end());
+        const Eigen::VectorXd owned_seed = seed;
+        nb::gil_scoped_release release;
+        return self.calcInvKin(inputs, owned_seed);
     };
     nb::class_<tk::KinematicGroup, tk::JointGroup>(m, "KinematicGroup")
         // Python has no move: the group takes a clone of inv_kin, so the caller's solver stays
@@ -298,15 +310,21 @@ NB_MODULE(_tesseract_kinematics, m) {
         .def("calcInvKin", [](const tk::KinematicGroup& self,
                               const tk::KinGroupIKInputs& tip_link_poses,
                               const Eigen::Ref<const Eigen::VectorXd>& seed) {
-            return self.calcInvKin(tip_link_poses, seed);
-        }, "tip_link_poses"_a, "seed"_a, nb::call_guard<nb::gil_scoped_release>())
+            const tk::KinGroupIKInputs owned_poses = tip_link_poses;
+            const Eigen::VectorXd owned_seed = seed;
+            nb::gil_scoped_release release;
+            return self.calcInvKin(owned_poses, owned_seed);
+        }, "tip_link_poses"_a, "seed"_a)
         .def("calcInvKin", [](const tk::KinematicGroup& self,
                               const tk::KinGroupIKInput& tip_link_pose,
                               const Eigen::Ref<const Eigen::VectorXd>& seed) {
-            return self.calcInvKin(tip_link_pose, seed);
-        }, "tip_link_pose"_a, "seed"_a, nb::call_guard<nb::gil_scoped_release>())
-        .def("calcInvKin", inv_kin_from_list, "tip_link_poses"_a, "seed"_a, nb::call_guard<nb::gil_scoped_release>())
-        .def("calcInvKinMultiple", inv_kin_from_list, "tip_link_poses"_a, "seed"_a, nb::call_guard<nb::gil_scoped_release>(),
+            const tk::KinGroupIKInput owned_pose = tip_link_pose;
+            const Eigen::VectorXd owned_seed = seed;
+            nb::gil_scoped_release release;
+            return self.calcInvKin(owned_pose, owned_seed);
+        }, "tip_link_pose"_a, "seed"_a)
+        .def("calcInvKin", inv_kin_from_list, "tip_link_poses"_a, "seed"_a)
+        .def("calcInvKinMultiple", inv_kin_from_list, "tip_link_poses"_a, "seed"_a,
              "Alias of `calcInvKin(tip_link_poses, seed)` with a list, the native form.")
         .def("getAllValidWorkingFrames", &tk::KinematicGroup::getAllValidWorkingFrames)
         .def("getAllPossibleTipLinkIds", &tk::KinematicGroup::getAllPossibleTipLinkIds)
