@@ -873,3 +873,29 @@ def check_batched_state_rows(
     allowed-collision rule before calling. The function supports native OFKT,
     Bullet BVH and native environment/ACM validators only.
     """
+
+def classify_candidate_state_rows(
+    solver: tesseract_robotics.tesseract_state_solver._tesseract_state_solver.StateSolver,
+    manager: DiscreteContactManager,
+    names: Sequence[str],
+    rows: Annotated[NDArray[numpy.float64], dict(shape=(None, None))],
+    limits: Annotated[NDArray[numpy.float64], dict(shape=(None, 2))],
+) -> list[str]:
+    """Return ordered clear, joint_limit or sampled_collision verdicts.
+
+    The solver and manager must be exclusively owned with fixed topology. Apply
+    the intended margin and allowed-collision rule before each call.
+    """
+
+def classify_candidate_state_rows_first(
+    solver: tesseract_robotics.tesseract_state_solver._tesseract_state_solver.StateSolver,
+    manager: DiscreteContactManager,
+    names: Sequence[str],
+    rows: Annotated[NDArray[numpy.float64], dict(shape=(None, None))],
+    limits: Annotated[NDArray[numpy.float64], dict(shape=(None, 2))],
+) -> list[str]:
+    """Return the same ordered verdicts, using a first-contact early screen.
+
+    Nonnegative first contacts require an ALL-contact check. The ownership,
+    topology, margin and allowed-collision requirements are unchanged.
+    """
