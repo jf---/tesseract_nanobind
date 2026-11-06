@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 from pathlib import Path
+from time import perf_counter
 from types import SimpleNamespace
 
 import numpy as np
@@ -21,6 +22,8 @@ RESIDUAL_PARITY_ATOL = 1e-12
 # One micrometre and one microradian around each existing coarse process threshold.
 THRESHOLD_OFFSET_M = 1e-6
 THRESHOLD_OFFSET_RAD = 1e-6
+# Bounded work uses the same deadline granularity as the process collision prototype.
+CHUNK_SIZE = 64
 
 
 class PoseRowsParityError(RuntimeError):
@@ -31,7 +34,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("station", "tour-index", "candidate", "witness", "output"):
         parser.add_argument(f"--{name}", required=True, type=Path)
+    parser.add_argument("--repeats", type=int, default=0)
     args = parser.parse_args()
+    if args.repeats < 0:
+        raise PoseRowsParityError("repeat count must be nonnegative")
     args.output.mkdir(parents=True, exist_ok=False)
     scene = initialize_scene(args.station, args.tour_index, args.output)
     initial = snapshot(scene)
@@ -114,6 +120,44 @@ def main():
         mismatches = int(np.count_nonzero(scalar_decisions != native_decisions))
         good = bool(np.all(differences <= RESIDUAL_PARITY_ATOL) and mismatches == 0)
         all_ok &= good
+        targets_array = np.asarray(target_matrices).reshape(-1, 16)
+        repeats = []
+        for repeat in range(args.repeats):
+            row_timing = {}
+            modes = ["scalar", "native"] if repeat % 2 == 0 else ["native", "scalar"]
+            for mode in modes:
+                began = perf_counter()
+                if mode == "scalar":
+                    observed = np.asarray(
+                        [
+                            error(tuple(row[:7]), target, fixture, bead.workpiece_frame)
+                            for row, target in zip(rows, poses, strict=True)
+                        ]
+                    )
+                else:
+                    observed = np.vstack(
+                        [
+                            workpiece_pose_residual_rows(
+                                solver,
+                                names,
+                                names[-2:],
+                                rows[start : start + CHUNK_SIZE],
+                                targets_array[start : start + CHUNK_SIZE],
+                                "workpiece_link",
+                                "nozzle_link",
+                            )
+                            for start in range(0, len(rows), CHUNK_SIZE)
+                        ]
+                    )
+                row_timing[mode + "_s"] = perf_counter() - began
+                if not np.allclose(observed, scalar, atol=RESIDUAL_PARITY_ATOL, rtol=0):
+                    raise PoseRowsParityError(f"timed {mode} residuals differ")
+                observed_decisions = (observed[:, 0] <= POSITION_SCREEN_M) & (
+                    observed[:, 1] <= ORIENTATION_SCREEN_RAD
+                )
+                if not np.array_equal(observed_decisions, scalar_decisions):
+                    raise PoseRowsParityError(f"timed {mode} decisions differ")
+            repeats.append(row_timing)
         records.append(
             {
                 "edge": index,
@@ -123,6 +167,7 @@ def main():
                 "max_orientation_difference_rad": float(differences[1]),
                 "decision_mismatches": mismatches,
                 "matched": good,
+                "alternating_repeats": repeats,
             }
         )
 
@@ -206,6 +251,8 @@ def main():
     report = {
         "matched": all_ok,
         "scene_restored": True,
+        "chunk_size": CHUNK_SIZE,
+        "timing_scope": "precomputed Python-interpolated targets; native copies inputs inside each call; no collision checking or interpolation time",
         "records": records,
         "boundary": boundary,
         "scope": "saved generated process samples plus real-cell threshold and near-pi targets; correctness only",

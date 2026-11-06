@@ -16,3 +16,14 @@ process/witness rows, A→B→A fixtures and cases around both process threshold
 zero and near-pi rotation. This is sampled correctness evidence, not a
 performance result or physical validation. The actual-cell check takes the
 station, tour-index, candidate, witness and output paths as explicit arguments.
+
+A separate five-repeat paired replay times pose calculations only: three
+528-row generated weld cases (fixture A→B→A) and a 33-row real witness. The
+same precomputed Python-interpolated targets are used in both modes. Native
+runs in 64-row chunks and includes copying and rigid-target validation. The
+sum of four separately measured cases had median 0.1172 s scalar and 0.02384 s
+native, under substantial background load. The replay excludes interpolation,
+collision, setup and deadline callbacks; it is not a tour speed benchmark.
+Repeat data and exact decisions are in `pose-rows-timing.json`. To reproduce,
+pass the same explicit arguments to `pose_rows_cell.py` with `--repeats 5` and
+a new output directory in the documented development consumer.

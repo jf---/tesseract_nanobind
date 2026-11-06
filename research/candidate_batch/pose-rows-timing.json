@@ -1,0 +1,286 @@
+{
+  "matched": true,
+  "scene_restored": true,
+  "chunk_size": 64,
+  "timing_scope": "Four separately measured cases per repeat; Python target interpolation and matrix construction excluded in both modes, native input copying and rigid validation included, no collision checking, no scene setup, no deadline callbacks.",
+  "records": [
+    {
+      "edge": 10,
+      "fixture": [
+        0.0,
+        1.1
+      ],
+      "rows": 528,
+      "max_position_difference_m": 4.235164736271502e-22,
+      "max_orientation_difference_rad": 0.0,
+      "decision_mismatches": 0,
+      "matched": true,
+      "alternating_repeats": [
+        {
+          "scalar_s": 0.03929716697894037,
+          "native_s": 0.011639249976724386
+        },
+        {
+          "native_s": 0.007901459001004696,
+          "scalar_s": 0.040110333007760346
+        },
+        {
+          "scalar_s": 0.035385459021199495,
+          "native_s": 0.00737920799292624
+        },
+        {
+          "native_s": 0.008605209004599601,
+          "scalar_s": 0.03651708300458267
+        },
+        {
+          "scalar_s": 0.04020295903319493,
+          "native_s": 0.006672416988294572
+        }
+      ]
+    },
+    {
+      "edge": 33,
+      "fixture": [
+        1.5708,
+        1.1
+      ],
+      "rows": 528,
+      "max_position_difference_m": 2.2111117461715707e-16,
+      "max_orientation_difference_rad": 1.8253644716624898e-16,
+      "decision_mismatches": 0,
+      "matched": true,
+      "alternating_repeats": [
+        {
+          "scalar_s": 0.040294500009622425,
+          "native_s": 0.008415832999162376
+        },
+        {
+          "native_s": 0.00848633301211521,
+          "scalar_s": 0.037556833995040506
+        },
+        {
+          "scalar_s": 0.037315208988729864,
+          "native_s": 0.0071953749866224825
+        },
+        {
+          "native_s": 0.008027874981053174,
+          "scalar_s": 0.03607329196529463
+        },
+        {
+          "scalar_s": 0.0376334169995971,
+          "native_s": 0.007606083003338426
+        }
+      ]
+    },
+    {
+      "edge": 10,
+      "fixture": [
+        0.0,
+        1.1
+      ],
+      "rows": 528,
+      "max_position_difference_m": 4.235164736271502e-22,
+      "max_orientation_difference_rad": 0.0,
+      "decision_mismatches": 0,
+      "matched": true,
+      "alternating_repeats": [
+        {
+          "scalar_s": 0.039284166996367276,
+          "native_s": 0.005970583995804191
+        },
+        {
+          "native_s": 0.007028667023405433,
+          "scalar_s": 0.035027083999011666
+        },
+        {
+          "scalar_s": 0.03417158400407061,
+          "native_s": 0.00684033299330622
+        },
+        {
+          "native_s": 0.006687125016469508,
+          "scalar_s": 0.04379587498260662
+        },
+        {
+          "scalar_s": 0.037258709024172276,
+          "native_s": 0.007181875000242144
+        }
+      ]
+    },
+    {
+      "edge": "penetration-witness",
+      "fixture": [
+        1.56979,
+        1.1
+      ],
+      "rows": 33,
+      "max_position_difference_m": 5.241762079939201e-17,
+      "max_orientation_difference_rad": 2.1327225071473184e-16,
+      "decision_mismatches": 0,
+      "matched": true,
+      "alternating_repeats": [
+        {
+          "scalar_s": 0.003240666992496699,
+          "native_s": 0.002015999983996153
+        },
+        {
+          "native_s": 0.0005612919921986759,
+          "scalar_s": 0.002571041986811906
+        },
+        {
+          "scalar_s": 0.002262583002448082,
+          "native_s": 0.0005974159575998783
+        },
+        {
+          "native_s": 0.0005160419968888164,
+          "scalar_s": 0.0022212500334717333
+        },
+        {
+          "scalar_s": 0.0021242499933578074,
+          "native_s": 0.0004793750122189522
+        }
+      ]
+    }
+  ],
+  "boundary": [
+    {
+      "label": "position_offset_0.004999",
+      "scalar": [
+        0.004998999999999976,
+        0.0
+      ],
+      "native": [
+        0.004998999999999976,
+        0.0
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "position_offset_0.005",
+      "scalar": [
+        0.0050000000000001155,
+        0.0
+      ],
+      "native": [
+        0.0050000000000001155,
+        0.0
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    },
+    {
+      "label": "position_offset_0.005001",
+      "scalar": [
+        0.005001000000000033,
+        0.0
+      ],
+      "native": [
+        0.005001000000000033,
+        0.0
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.0",
+      "scalar": [
+        2.220446049250313e-16,
+        0.0
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.0
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.08726546259971647",
+      "scalar": [
+        2.220446049250313e-16,
+        0.08726546259971613
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.08726546259971613
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.08726646259971647",
+      "scalar": [
+        2.220446049250313e-16,
+        0.08726646259971604
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.08726646259971604
+      ],
+      "scalar_accept": true,
+      "native_accept": true,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_0.08726746259971647",
+      "scalar": [
+        2.220446049250313e-16,
+        0.08726746259971614
+      ],
+      "native": [
+        2.220446049250313e-16,
+        0.08726746259971614
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    },
+    {
+      "label": "rotation_offset_3.141591653589793",
+      "scalar": [
+        2.220446049250313e-16,
+        3.1415916535897934
+      ],
+      "native": [
+        2.220446049250313e-16,
+        3.1415916535897934
+      ],
+      "scalar_accept": false,
+      "native_accept": false,
+      "matched": true
+    }
+  ],
+  "scope": "saved generated process samples plus real-cell threshold and near-pi targets; correctness only",
+  "per_repeat_sums": [
+    {
+      "scalar_s": 0.12211650097742677,
+      "native_s": 0.028041666955687106
+    },
+    {
+      "scalar_s": 0.11526529298862442,
+      "native_s": 0.023977751028724015
+    },
+    {
+      "scalar_s": 0.10913483501644805,
+      "native_s": 0.02201233193045482
+    },
+    {
+      "scalar_s": 0.11860749998595566,
+      "native_s": 0.0238362509990111
+    },
+    {
+      "scalar_s": 0.11721933505032212,
+      "native_s": 0.021939750004094094
+    }
+  ],
+  "median_scalar_s": 0.11721933505032212,
+  "median_native_s": 0.0238362509990111,
+  "contention": "Unrelated Python and editor processes each consumed approximately one CPU core; system processes were also active.",
+  "consumer_module": "/Users/jelle/Code/CADCAM/tesseract_qt_robodk/.worktrees/r62-smooth-windows-main/.superpowers/piqp-nanobind-collision-only/collision-only-consumer/tesseract_robotics/tesseract_state_solver/_tesseract_state_solver.abi3.so",
+  "source_commit": "e9a8f39"
+}
