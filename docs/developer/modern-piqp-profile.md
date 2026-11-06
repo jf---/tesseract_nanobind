@@ -105,3 +105,32 @@ stages spent 1.940 s and 0.539 s in SQP. Their variable updates took 1.048 s
 and 0.135 s, convexification 0.155 s and 0.050 s, and QP calls 0.732 s and
 0.354 s. These are inclusive measurements from one run under heavy unrelated
 CPU contention, not a clean performance comparison or an all-tour result.
+
+## Combined Ruckig and GIL wheel experiment
+
+A second isolated macOS arm64 research wheel combines the tested FK/IK input
+ownership and OFKT concurrency changes with the owned Ruckig trajectory binding.
+The nanobind source branch is `codex/piqp-ruckig-gil` at `6ad58f0`, based on
+`684f248`; its matched Planning Ruckig source is `16c50aa`. The native Ruckig
+library was rebuilt for macOS 15.0 into a separate staging prefix; the earlier
+evidence wheel and source installations were not changed.
+
+In a separate Pixi consumer with `DYLD_LIBRARY_PATH` and
+`DYLD_FALLBACK_LIBRARY_PATH` unset, 95 focused and reference tests passed,
+covering PIQP, Ruckig, FK/IK ownership and the OFKT-specific entry point. A
+wheel inspection found 472 recorded files and 113 Mach-O files with no external
+absolute RPATH or non-system absolute dependency; each reported a minimum macOS
+version no later than 15.0. The blocking IK test helper is a separately built
+research module; the test process preloads the wheel's kinematics module to
+prevent the helper's build-time RPATH from selecting a second native library.
+
+The R62 native-cell smoke loaded Bullet and OFKT from the wheel, reproduced
+fixture A–B–A contacts, matched all 62 OFKT link transforms across its two
+state APIs, and evaluated a constructed seven-axis Ruckig motion through the
+cell's joint group. It used local source for the kernel artifact locator and
+research checker. The older application research loader expects an artifact
+locator API that the current standalone parser no longer exports, so that
+loader is not established as compatible by this component smoke. The synthetic
+motion is not a planned tour, continuous collision proof, or controller result.
+The wheel is a local research artifact; other macOS versions, architectures,
+third-party licensing for distribution, and physical execution remain unchecked.
