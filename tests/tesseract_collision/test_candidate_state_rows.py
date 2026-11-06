@@ -18,22 +18,28 @@ def test_all_ordered_rows_match_independent_scalar_checks(cell):
     assert collision.classify_candidate_state_rows(solver, manager, names, rows, limits) == expected
 
 
-def test_malformed_and_unknown_validator_fail_loudly(cell):
+@pytest.mark.parametrize(
+    "classifier_name", ["classify_candidate_state_rows", "classify_candidate_state_rows_first"]
+)
+def test_malformed_and_unknown_validator_fail_loudly(cell, classifier_name):
     _env, solver, manager, names, limits, q = cell
     with pytest.raises(collision.InvalidBatch):
-        collision.classify_candidate_state_rows(solver, manager, names, q[None, :-1], limits)
+        getattr(collision, classifier_name)(solver, manager, names, q[None, :-1], limits)
     original = manager.getContactAllowedValidator()
     from tesseract_robotics.tesseract_common import CombinedContactAllowedValidator
 
     manager.setContactAllowedValidator(CombinedContactAllowedValidator())
     try:
         with pytest.raises(collision.UnsupportedBatchContext):
-            collision.classify_candidate_state_rows(solver, manager, names, q[None, :], limits)
+            getattr(collision, classifier_name)(solver, manager, names, q[None, :], limits)
     finally:
         manager.setContactAllowedValidator(original)
 
 
-def test_input_copy_and_gil_progress_on_owned_scene(cell):
+@pytest.mark.parametrize(
+    "classifier_name", ["classify_candidate_state_rows", "classify_candidate_state_rows_first"]
+)
+def test_input_copy_and_gil_progress_on_owned_scene(cell, classifier_name):
     from threading import Event, Thread
     from time import sleep
 
@@ -53,7 +59,7 @@ def test_input_copy_and_gil_progress_on_owned_scene(cell):
     thread = Thread(target=mutate)
     thread.start()
     try:
-        decisions = collision.classify_candidate_state_rows(solver, manager, names, rows, limits)
+        decisions = getattr(collision, classifier_name)(solver, manager, names, rows, limits)
         mutated_in_call = mutated.is_set()
     finally:
         thread.join()
@@ -96,3 +102,13 @@ def test_acm_and_nonnegative_contacts_keep_all_rows(cell):
     finally:
         manager.setContactAllowedValidator(original)
         manager.setCollisionMarginData(original_margin)
+
+
+def test_first_then_all_preserves_full_contact_verdicts(cell):
+    _env, solver, manager, names, limits, q = cell
+    rows = np.asarray([q, q, q])
+    expected = collision.classify_candidate_state_rows(solver, manager, names, rows, limits)
+    assert (
+        collision.classify_candidate_state_rows_first(solver, manager, names, rows, limits)
+        == expected
+    )

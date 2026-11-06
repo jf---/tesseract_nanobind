@@ -23,14 +23,13 @@ namespace ts = tesseract::scene_graph;
 
 // Registered in batch_state_checks.cpp; exception types are shared across APIs.
 
-void bind_candidate_state_rows(nb::module_& module)
+static std::vector<std::string> classify_rows(std::shared_ptr<ts::StateSolver> solver,
+                                              std::shared_ptr<tc::DiscreteContactManager> manager,
+                                              std::vector<std::string> names,
+                                              Eigen::MatrixXd rows,
+                                              Eigen::MatrixXd limits,
+                                              bool first_screen)
 {
-  module.def("classify_candidate_state_rows",
-    [](std::shared_ptr<ts::StateSolver> solver,
-       std::shared_ptr<tc::DiscreteContactManager> manager,
-       std::vector<std::string> names,
-       Eigen::MatrixXd rows,
-       Eigen::MatrixXd limits) -> std::vector<std::string> {
       if (!solver || !manager || names.empty() || rows.rows() == 0 ||
           rows.cols() != static_cast<long>(names.size()) || limits.rows() != static_cast<long>(names.size()) ||
           limits.cols() != 2 || !rows.allFinite() || !limits.allFinite() ||
@@ -75,16 +74,50 @@ void bind_candidate_state_rows(nb::module_& module)
           const auto state = solver->getState(ids, q);
           manager->setCollisionObjectsTransform(state.link_transforms);
           tc::ContactResultMap contacts;
-          manager->contactTest(contacts, tc::ContactRequest(tc::ContactTestType::ALL));
           tc::ContactResultVector flat;
-          contacts.flattenMoveResults(flat);
-          const bool penetrating = std::any_of(flat.begin(), flat.end(), [](const auto& hit) { return hit.distance < 0; });
+          bool penetrating = false;
+          bool require_all = true;
+          if (first_screen)
+          {
+            manager->contactTest(contacts, tc::ContactRequest(tc::ContactTestType::FIRST));
+            contacts.flattenMoveResults(flat);
+            if (flat.empty())
+              require_all = false;
+            else if (flat.front().distance < 0)
+            {
+              penetrating = true;
+              require_all = false;
+            }
+            contacts.clear();
+            flat.clear();
+          }
+          if (require_all)
+          {
+            manager->contactTest(contacts, tc::ContactRequest(tc::ContactTestType::ALL));
+            contacts.flattenMoveResults(flat);
+            penetrating = std::any_of(flat.begin(), flat.end(), [](const auto& hit) { return hit.distance < 0; });
+          }
           verdicts.emplace_back(penetrating ? "sampled_collision" : "clear");
         }
       }
       return verdicts;
-    }, nb::arg("solver"), nb::arg("manager"), nb::arg("names"), nb::arg("rows"), nb::arg("limits"),
-    "Classify ordered full-cell candidate rows on an exclusively owned native solver and manager. "
-    "The caller applies ACM and margins and checks its budget before and after each bounded call. "
-    "Results are clear, joint_limit or sampled_collision; no collision details are returned.");
+ }
+
+void bind_candidate_state_rows(nb::module_& module)
+{
+  auto bind = [&module](const char* name, bool first_screen) {
+    module.def(name,
+      [first_screen](std::shared_ptr<ts::StateSolver> solver,
+                     std::shared_ptr<tc::DiscreteContactManager> manager,
+                     std::vector<std::string> names,
+                     Eigen::MatrixXd rows,
+                     Eigen::MatrixXd limits) {
+        return classify_rows(std::move(solver), std::move(manager), std::move(names),
+                             std::move(rows), std::move(limits), first_screen);
+      }, nb::arg("solver"), nb::arg("manager"), nb::arg("names"), nb::arg("rows"), nb::arg("limits"),
+      "Classify ordered full-cell candidates using an exclusively owned solver and manager. "
+      "Apply ACM and margins before each call; check deadline before and after bounded calls.");
+  };
+  bind("classify_candidate_state_rows", false);
+  bind("classify_candidate_state_rows_first", true);
 }

@@ -1,0 +1,44 @@
+{
+  "scope": "Actual fixture, 50 mm test-only proximity margin, positive FIRST with another penetrating pair",
+  "candidates_examined": 301,
+  "fixture": [
+    1.56979,
+    1.1
+  ],
+  "state": [
+    5.6000000000000005,
+    -0.9035202525675299,
+    2.3019455001028333,
+    -0.36372777824833524,
+    1.7572061503803118,
+    -0.180686217669336,
+    0.14759511576669793,
+    1.56979,
+    1.1
+  ],
+  "first_contact": {
+    "links": [
+      "neck_link",
+      "part_014"
+    ],
+    "distance_m": 0.04586703928879042
+  },
+  "negative_contacts": [
+    {
+      "links": [
+        "carriage_link",
+        "mh50_20ii_link_2"
+      ],
+      "distance_m": -0.0745427771534624
+    }
+  ],
+  "verdict": [
+    "sampled_collision"
+  ],
+  "override_verdict": [
+    "clear"
+  ],
+  "restored_verdict": [
+    "sampled_collision"
+  ]
+}

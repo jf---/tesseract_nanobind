@@ -1,0 +1,137 @@
+{
+  "scope": "Same real target inputs, one scene, scalar then batch; measured calls include instrumentation overhead and do not isolate deduplication from other residual Python work.",
+  "setup_s": 2.4470737079973333,
+  "results": [
+    {
+      "case": "probe-a",
+      "scalar": {
+        "ik_s": 0.016294333268888295,
+        "ik_calls": 63,
+        "fk_s": 0.01293079974129796,
+        "fk_calls": 182,
+        "scalar_collision_s": 0.012962292472366244,
+        "scalar_collision_calls": 182,
+        "marshal_s": 0.0,
+        "native_collision_s": 0.0,
+        "native_chunks": 0,
+        "native_rows": 0,
+        "total_s": 0.04637145798187703,
+        "unattributed_generation_s": 0.00418403249932453,
+        "rung_lengths": [
+          62,
+          60,
+          60
+        ]
+      },
+      "batched": {
+        "ik_s": 0.015241081942804158,
+        "ik_calls": 63,
+        "fk_s": 0.012827248778194189,
+        "fk_calls": 182,
+        "scalar_collision_s": 0.0,
+        "scalar_collision_calls": 0,
+        "marshal_s": 0.0,
+        "native_collision_s": 0.003973167040385306,
+        "native_chunks": 3,
+        "native_rows": 182,
+        "total_s": 0.03616091702133417,
+        "unattributed_generation_s": 0.004119419259950519,
+        "rung_lengths": [
+          62,
+          60,
+          60
+        ]
+      }
+    },
+    {
+      "case": "probe-b",
+      "scalar": {
+        "ik_s": 0.017170793726108968,
+        "ik_calls": 63,
+        "fk_s": 0.014683414541650563,
+        "fk_calls": 214,
+        "scalar_collision_s": 0.015393456327728927,
+        "scalar_collision_calls": 214,
+        "marshal_s": 0.0,
+        "native_collision_s": 0.0,
+        "native_chunks": 0,
+        "native_rows": 0,
+        "total_s": 0.05196487496141344,
+        "unattributed_generation_s": 0.004717210365924984,
+        "rung_lengths": [
+          66,
+          66,
+          66
+        ]
+      },
+      "batched": {
+        "ik_s": 0.016453080635983497,
+        "ik_calls": 63,
+        "fk_s": 0.013918750686571002,
+        "fk_calls": 214,
+        "scalar_collision_s": 0.0,
+        "scalar_collision_calls": 0,
+        "marshal_s": 0.0,
+        "native_collision_s": 0.0053276249673217535,
+        "native_chunks": 4,
+        "native_rows": 214,
+        "total_s": 0.04025112499948591,
+        "unattributed_generation_s": 0.0045516687096096575,
+        "rung_lengths": [
+          66,
+          66,
+          66
+        ]
+      }
+    },
+    {
+      "case": "weld",
+      "scalar": {
+        "ik_s": 0.16167504171608016,
+        "ik_calls": 651,
+        "fk_s": 0.13074859167682007,
+        "fk_calls": 1844,
+        "scalar_collision_s": 0.19395104853902012,
+        "scalar_collision_calls": 1844,
+        "marshal_s": 0.0,
+        "native_collision_s": 0.0,
+        "native_chunks": 0,
+        "native_rows": 0,
+        "total_s": 0.5197118340292946,
+        "unattributed_generation_s": 0.0333371520973742,
+        "rung_lengths": [
+          548,
+          56,
+          56,
+          60,
+          60,
+          60,
+          300
+        ]
+      },
+      "batched": {
+        "ik_s": 0.15380165970418602,
+        "ik_calls": 651,
+        "fk_s": 0.12490834621712565,
+        "fk_calls": 1844,
+        "scalar_collision_s": 0.0,
+        "scalar_collision_calls": 0,
+        "marshal_s": 0.0008088320610113442,
+        "native_collision_s": 0.10189904290018603,
+        "native_chunks": 31,
+        "native_rows": 1844,
+        "total_s": 0.40720383398002014,
+        "unattributed_generation_s": 0.025785953097511083,
+        "rung_lengths": [
+          548,
+          56,
+          56,
+          60,
+          60,
+          60,
+          300
+        ]
+      }
+    }
+  ]
+}
