@@ -1,3 +1,4 @@
+#include "batch_state_errors.h"
 #include <nanobind/nanobind.h>
 #include <nanobind/eigen/dense.h>
 #include <nanobind/stl/shared_ptr.h>
@@ -22,8 +23,6 @@
 namespace nb = nanobind;
 namespace tc = tesseract::collision;
 namespace ts = tesseract::scene_graph;
-struct InvalidBatch : std::runtime_error { using std::runtime_error::runtime_error; };
-struct UnsupportedContext : std::runtime_error { using std::runtime_error::runtime_error; };
 using Result = std::tuple<std::string, long, std::string, std::string, double>;
 
 void bind_batch_state_checks(nb::module_& module)
