@@ -688,6 +688,14 @@ class TrajOptQPProblem(QPProblem):
 
     def print(self) -> None: ...
 
+class TimedTrajOptQPProblem(QPProblem):
+    """Opt-in research problem measuring SQP evaluation entry points."""
+
+    def __init__(self, variables: tesseract_robotics.trajopt_ifopt._trajopt_ifopt.Variables) -> None: ...
+
+    def getEvaluationTimings(self) -> dict[str, dict[str, float | int]]: ...
+
+
 class QPProblemView(QPProblem):
     """
     The problem an SQPCallback receives from a solve whose problem has no Python object (one a
@@ -943,6 +951,17 @@ class PIQPSolver(QPSolver):
         """
         Whether the last solve reused the previous setup (only the vectors changed)
         """
+
+
+class PIQPTimedSolver(PIQPSolver):
+    """Opt-in research solver recording timing per QP call."""
+
+    def __init__(self) -> None: ...
+
+    def getTimingRecords(self) -> list[dict[str, float | str | bool | None]]:
+        """Return setup, update and solve timings; unavailable fields are None."""
+
+    def clearTimingRecords(self) -> None: ...
 
 
 class TrustRegionSQPSolver:

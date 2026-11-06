@@ -19,6 +19,8 @@
 #error "The modern SQP binding requires a PIQP-enabled TrajOpt build"
 #endif
 #include <trajopt_sqp/piqp_solver.h>
+#include "piqp_timed_solver.h"
+#include "timed_qp_problem.h"
 #include <trajopt_sqp/qp_problem.h>
 #include <trajopt_sqp/trajopt_qp_problem.h>
 #include <trajopt_sqp/trust_region_sqp_solver.h>
@@ -522,6 +524,33 @@ NB_MODULE(_trajopt_sqp, m) {
         .def("reusedSetup", &tsqp::PIQPSolver::reusedSetup,
              "Whether the last solve reused the previous setup (only the vectors changed)");
 
+    nb::class_<PIQPTimedSolver, tsqp::PIQPSolver>(m, "PIQPTimedSolver",
+        "Opt-in research PIQP solver recording one timing entry per QP call")
+        .def(nb::init<>())
+        .def("getTimingRecords", [](const PIQPTimedSolver& self) {
+            nb::list result;
+            for (const auto& timing : self.timingRecords()) {
+                nb::dict entry;
+                entry["success"] = nb::bool_(timing.success);
+                entry["wall_s"] = nb::float_(timing.wall.count());
+                entry["native_status"] = timing.success ? nb::object(nb::str("solved")) : nb::none();
+                if (timing.native_timing_available) {
+                    entry["mode"] = nb::str(timing.reused_setup ? "update" : "setup");
+                    entry["setup_s"] = timing.reused_setup ? nb::object(nb::none()) : nb::object(nb::float_(timing.setup.count()));
+                    entry["update_s"] = timing.reused_setup ? nb::object(nb::float_(timing.update.count())) : nb::object(nb::none());
+                    entry["solve_s"] = nb::float_(timing.solve.count());
+                } else {
+                    entry["mode"] = nb::str("unknown");
+                    entry["setup_s"] = nb::none();
+                    entry["update_s"] = nb::none();
+                    entry["solve_s"] = nb::none();
+                }
+                result.append(entry);
+            }
+            return result;
+        })
+        .def("clearTimingRecords", &PIQPTimedSolver::clearTimingRecords);
+
     // ========== QPProblem (abstract base) ==========
 
     nb::class_<tsqp::QPProblem>(m, "QPProblem",
@@ -665,6 +694,26 @@ NB_MODULE(_trajopt_sqp, m) {
         .def("setup", &tsqp::TrajOptQPProblem::setup)
         .def("convexify", &tsqp::TrajOptQPProblem::convexify)
         .def("print", &tsqp::TrajOptQPProblem::print);
+
+    nb::class_<TimedTrajOptQPProblem, tsqp::QPProblem>(m, "TimedTrajOptQPProblem",
+        "Opt-in research problem measuring SQP evaluation entry points")
+        .def(nb::init<std::shared_ptr<trajopt_ifopt::Variables>>(), "variables"_a)
+        .def("getEvaluationTimings", [](const TimedTrajOptQPProblem& self) {
+            nb::dict result;
+            auto add = [&result](const char* name, const TimedTrajOptQPProblem::Phase& phase) {
+                nb::dict entry;
+                entry["calls"] = nb::int_(phase.calls);
+                entry["seconds"] = nb::float_(phase.elapsed.count());
+                result[name] = entry;
+            };
+            add("set_variables", self.setVariablesTiming());
+            add("convexify", self.convexifyTiming());
+            add("exact_costs", self.exactCostsTiming());
+            add("exact_constraints", self.exactConstraintsTiming());
+            add("convex_costs", self.convexCostsTiming());
+            add("convex_constraints", self.convexConstraintsTiming());
+            return result;
+        });
 
     // ========== SQPCallback ==========
     // NOTE: PySQPCallback trampoline allows Python subclasses

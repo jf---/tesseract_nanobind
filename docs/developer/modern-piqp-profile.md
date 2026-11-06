@@ -71,3 +71,37 @@ a test on macOS 15.0. It does not establish controller execution, physical
 collision freedom or performance across tours. Other macOS versions and
 architectures, and the third-party license inventory for distribution, remain
 unverified. The research wheel is not a release artifact.
+
+## PIQP timing probe
+
+`PIQPTimedSolver` is an opt-in research subclass. It delegates each call to the
+existing PIQP implementation, enables PIQP's timing counters and records QP
+wall, setup, bounds-update and solve times. A rejected call is recorded as a
+failure with native status and timings unavailable: the underlying solver may
+reject crossed bounds before entering PIQP, so its previous result must not be
+reported as the failed call's timing. The ordinary `PIQPSolver` is unchanged.
+
+On two generated detours in one retained scene, both the ordinary and timed
+soft-to-hard solves converged to identical joint states and passed independent
+sampled checks. Across their four timed stages, wall time was 0.731 s: term
+creation 0.241 s, problem assembly/setup 0.025 s and SQP 0.464 s. The 88 QP
+calls used 0.073 s wall, including 0.010 s of PIQP setup; 73 calls set up and
+15 updated bounds. These are two bounded examples, not an all-tour benchmark.
+SQP work outside the QP calls was not separated into collision, derivatives
+and other work in this probe. Scene setup, 4.83 s, was measured separately.
+
+`TimedTrajOptQPProblem` is a separate opt-in research problem that measures
+existing SQP entry points: variable updates, convexification, exact costs and
+constraints, and convex costs and constraints. These timings are inclusive;
+convexification includes derivative assembly, while variable updates visit all
+components and can include collision work. Neither timer isolates collision by
+itself.
+
+A generated Tour 18 detour matched a retained route's endpoints and fixture.
+For one soft-to-hard replay, baseline and timed variants produced identical
+joint states and the same independent-check result; both SQP stages converged,
+while the existing sampled-check policy rejected the candidate. The timed
+stages spent 1.940 s and 0.539 s in SQP. Their variable updates took 1.048 s
+and 0.135 s, convexification 0.155 s and 0.050 s, and QP calls 0.732 s and
+0.354 s. These are inclusive measurements from one run under heavy unrelated
+CPU contention, not a clean performance comparison or an all-tour result.
