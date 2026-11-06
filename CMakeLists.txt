@@ -360,6 +360,7 @@ add_tesseract_nanobind_extension(
 
 # Find and add tesseract_time_parameterization
 find_package(tesseract_planning REQUIRED COMPONENTS time_parameterization time_parameterization_isp time_parameterization_totg time_parameterization_kdl time_parameterization_ruckig)
+find_package(ruckig CONFIG REQUIRED)
 
 add_tesseract_nanobind_extension(
   tesseract_time_parameterization
@@ -371,7 +372,9 @@ add_tesseract_nanobind_extension(
   tesseract::time_parameterization
   tesseract::command_language
   tesseract::common
+  ruckig::ruckig
 )
+target_sources(_tesseract_time_parameterization PRIVATE src/tesseract_time_parameterization/ruckig_trajectory_bindings.cpp)
 
 # Find and add tesseract_task_composer
 find_package(tesseract_planning REQUIRED COMPONENTS task_composer task_composer_taskflow task_composer_planning)

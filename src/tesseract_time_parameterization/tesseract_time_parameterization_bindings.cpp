@@ -89,7 +89,12 @@ private:
     std::vector<const tcl::InstructionPoly*> addresses_;
 };
 
+void bind_ruckig_trajectory(nb::module_& m);
+void bind_ruckig_smoother_segments(nb::module_& m,
+    nb::class_<tp::RuckigTrajectorySmoothing, tp::TimeParameterization>& smoother);
+
 NB_MODULE(_tesseract_time_parameterization, m) {
+    bind_ruckig_trajectory(m);
     m.doc() = "tesseract_time_parameterization Python bindings";
 
     // Import Profile from tesseract_command_language for cross-module inheritance
@@ -226,8 +231,9 @@ NB_MODULE(_tesseract_time_parameterization, m) {
     bind_value_equality(ruckig_composite_profile);
 
     // ========== RuckigTrajectorySmoothing ==========
-    nb::class_<tp::RuckigTrajectorySmoothing, tp::TimeParameterization>(m, "RuckigTrajectorySmoothing")
-        .def(nb::init<std::string>(), "name"_a = "RuckigTrajectorySmoothing");
+    auto ruckig_smoother = nb::class_<tp::RuckigTrajectorySmoothing, tp::TimeParameterization>(m, "RuckigTrajectorySmoothing");
+    ruckig_smoother.def(nb::init<std::string>(), "name"_a = "RuckigTrajectorySmoothing");
+    bind_ruckig_smoother_segments(m, ruckig_smoother);
 
     // ========== Utilities ==========
     nb::exception<ScalingsLengthError>(m, "ScalingsLengthError", PyExc_ValueError)

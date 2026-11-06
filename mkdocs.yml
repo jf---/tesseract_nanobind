@@ -139,6 +139,7 @@ nav:
     - Kinematics: user-guide/kinematics.md
     - Collision Detection: user-guide/collision.md
     - Motion Planning: user-guide/planning.md
+    - Ruckig Trajectories: user-guide/ruckig-trajectories.md
     - Task Composer: user-guide/task-composer.md
     - Serialization: user-guide/serialization.md
     - Low-Level SQP API: user-guide/low-level-sqp.md
