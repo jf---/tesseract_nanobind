@@ -185,6 +185,7 @@ public:
 }  // namespace
 
 void bind_batch_state_checks(nanobind::module_& module);
+void bind_candidate_state_rows(nanobind::module_& module);
 
 NB_MODULE(_tesseract_collision, m) {
     // Import geometry module for tesseract::geometry::{Geometry,Mesh,ConvexMesh} (else stubs quote the
@@ -831,4 +832,5 @@ NB_MODULE(_tesseract_collision, m) {
         .def(nb::init<const tc::VHACDParameters&>(), "params"_a);
 
     bind_batch_state_checks(m);
+    bind_candidate_state_rows(m);
 }

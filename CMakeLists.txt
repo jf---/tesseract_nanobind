@@ -182,7 +182,7 @@ add_tesseract_nanobind_extension(
 )
 
 # Add tesseract_state_solver module
-target_sources(_tesseract_collision PRIVATE src/tesseract_collision/batch_state_checks.cpp)
+target_sources(_tesseract_collision PRIVATE src/tesseract_collision/batch_state_checks.cpp src/tesseract_collision/candidate_state_rows.cpp)
 target_link_libraries(_tesseract_collision PRIVATE tesseract::state_solver_ofkt tesseract::environment)
 
 add_tesseract_nanobind_extension(
